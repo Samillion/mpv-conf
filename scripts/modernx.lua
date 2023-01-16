@@ -1344,7 +1344,7 @@ layouts = function ()
     lo = add_layout('title')
     lo.geometry = geo
     lo.style = string.format('%s{\\clip(%f,%f,%f,%f)}', osc_styles.Title,
-								geo.x, geo.y - geo.h, geo.x + geo.w , geo.y)
+								geo.x, geo.y - geo.h, geo.x + geo.w , geo.y + 5)
 	lo.alpha[3] = 0
     lo.button.maxchars = geo.w / 23
 end
@@ -2277,7 +2277,7 @@ function tick()
             ass:new_event()
             ass:pos(display_w / 2, icon_y + 65)
             ass:an(8)
-            ass:append('Drop files or URLs to play here.')
+            ass:append(texts.welcome)
         end
         set_osd(display_w, display_h, ass.text)
 
