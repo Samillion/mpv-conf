@@ -14,5 +14,7 @@ Before using, review the files first, to know what's going on.
 - Console ([Source](https://github.com/mpv-player/mpv/blob/master/player/lua/console.lua))
 - Stats ([Source](https://github.com/mpv-player/mpv/blob/master/player/lua/stats.lua))
 - Modern-F OSC ([Source](https://github.com/FinnRaze/mpv-osc-modern-f))
+- BoxToWide ([Source](https://github.com/Samillion/mpv-boxtowide))
+- YTDLAutoFormat ([Source](https://github.com/Samillion/mpv-ytdlautoformat))
 
 ![image](https://github.com/Samillion/mpv-conf/assets/17427046/14a9e1c2-67e8-4325-bc17-4e50828da720)
