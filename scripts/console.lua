@@ -36,7 +36,7 @@ local opts = {
     font_hw_ratio = 'auto',
 }
 
-function detect_platform()
+local function detect_platform()
     local platform = mp.get_property_native('platform')
     if platform == 'darwin' or platform == 'windows' then
         return platform
@@ -75,6 +75,7 @@ local styles = {
     fatal = '{\\1c&H5791f9&\\b1}',
     suggestion = '{\\1c&Hcc99cc&}',
     selected_suggestion = '{\\1c&H2fbdfa&\\b1}',
+    disabled = '{\\1c&Hcccccc&}',
 }
 
 local terminal_styles = {
@@ -84,6 +85,7 @@ local terminal_styles = {
     error = '\027[31m',
     fatal = '\027[1;31m',
     selected_suggestion = '\027[7m',
+    disabled = '\027[38;5;8m',
 }
 
 local repl_active = false
@@ -105,131 +107,163 @@ local input_caller
 
 local suggestion_buffer = {}
 local selected_suggestion_index
-local completion_start_position
+local completion_pos
 local completion_append
-local file_commands = {}
 local path_separator = platform == 'windows' and '\\' or '/'
 local completion_old_line
 local completion_old_cursor
 
-local update_timer = nil
-update_timer = mp.add_periodic_timer(0.05, function()
-    if pending_update then
-        update()
-    else
-        update_timer:kill()
+local selectable_items
+local matches = {}
+local selected_match = 1
+local first_match_to_print = 1
+
+local set_active
+
+
+-- Naive helper function to find the next UTF-8 character in 'str' after 'pos'
+-- by skipping continuation bytes. Assumes 'str' contains valid UTF-8.
+local function next_utf8(str, pos)
+    if pos > str:len() then return pos end
+    repeat
+        pos = pos + 1
+    until pos > str:len() or str:byte(pos) < 0x80 or str:byte(pos) > 0xbf
+    return pos
+end
+
+-- As above, but finds the previous UTF-8 character in 'str' before 'pos'
+local function prev_utf8(str, pos)
+    if pos <= 1 then return pos end
+    repeat
+        pos = pos - 1
+    until pos <= 1 or str:byte(pos) < 0x80 or str:byte(pos) > 0xbf
+    return pos
+end
+
+local function len_utf8(str)
+    local len = 0
+    local pos = 1
+    while pos <= str:len() do
+        pos = next_utf8(str, pos)
+        len = len + 1
     end
-end)
-update_timer:kill()
+    return len
+end
 
-mp.observe_property("user-data/osc/margins", "native", function(_, val)
-    if val then
-        global_margins = val
-    else
-        global_margins = { t = 0, b = 0 }
-    end
-    update()
-end)
-
-do
-    local width_length_ratio = 0.5
-    local osd_width, osd_height = 100, 100
-
-    ---Update osd resolution if valid
-    local function update_osd_resolution()
-        local dim = mp.get_property_native('osd-dimensions')
-        if not dim or dim.w == 0 or dim.h == 0 then
-            return
+local function truncate_utf8(str, max_length)
+    local len = 0
+    local pos = 1
+    while pos <= #str do
+        pos = next_utf8(str, pos)
+        len = len + 1
+        if len == max_length - 1 then
+            return str:sub(1, pos - 1) .. '⋯'
         end
-        osd_width = dim.w
-        osd_height = dim.h
     end
+    return str
+end
 
-    local text_osd = mp.create_osd_overlay('ass-events')
-    text_osd.compute_bounds, text_osd.hidden = true, true
 
-    local function measure_bounds(ass_text)
+-- Functions to calculate the font width.
+local width_length_ratio = 0.5
+local osd_width, osd_height = 100, 100
+
+---Update osd resolution if valid
+local function update_osd_resolution()
+    local dim = mp.get_property_native('osd-dimensions')
+    if not dim or dim.w == 0 or dim.h == 0 then
+        return
+    end
+    osd_width = dim.w
+    osd_height = dim.h
+end
+
+local text_osd = mp.create_osd_overlay('ass-events')
+text_osd.compute_bounds, text_osd.hidden = true, true
+
+local function measure_bounds(ass_text)
+    update_osd_resolution()
+    text_osd.res_x, text_osd.res_y = osd_width, osd_height
+    text_osd.data = ass_text
+    local res = text_osd:update()
+    return res.x0, res.y0, res.x1, res.y1
+end
+
+---Measure text width and normalize to a font size of 1
+---text has to be ass safe
+local function normalized_text_width(text, size, horizontal)
+    local align, rotation = horizontal and 7 or 1, horizontal and 0 or -90
+    local template = '{\\pos(0,0)\\rDefault\\blur0\\bord0\\shad0\\q2\\an%s\\fs%s\\fn%s\\frz%s}%s'
+    size = size / 0.8
+    local width
+    -- Limit to 5 iterations
+    local repetitions_left = 5
+    for i = 1, repetitions_left do
+        size = size * 0.8
+        local ass = assdraw.ass_new()
+        ass.text = template:format(align, size, opts.font, rotation, text)
+        local _, _, x1, y1 = measure_bounds(ass.text)
+        -- Check if nothing got clipped
+        if x1 and x1 < osd_width and y1 < osd_height then
+            width = horizontal and x1 or y1
+            break
+        end
+        if i == repetitions_left then
+            width = 0
+        end
+    end
+    return width / size, horizontal and osd_width or osd_height
+end
+
+local function fit_on_osd(text)
+    local estimated_width = #text * width_length_ratio
+    if osd_width >= osd_height then
+        -- Fill the osd as much as possible, bigger is more accurate.
+        return math.min(osd_width / estimated_width, osd_height), true
+    else
+        return math.min(osd_height / estimated_width, osd_width), false
+    end
+end
+
+local measured_font_hw_ratio = nil
+local function get_font_hw_ratio()
+    local font_hw_ratio = tonumber(opts.font_hw_ratio)
+    if font_hw_ratio then
+        return font_hw_ratio
+    end
+    if not measured_font_hw_ratio then
+        local alphabet = 'abcdefghijklmnopqrstuvwxyz'
+        local text = alphabet:rep(3)
         update_osd_resolution()
-        text_osd.res_x, text_osd.res_y = osd_width, osd_height
-        text_osd.data = ass_text
-        local res = text_osd:update()
-        return res.x0, res.y0, res.x1, res.y1
+        local size, horizontal = fit_on_osd(text)
+        local normalized_width = normalized_text_width(text, size * 0.9, horizontal)
+        measured_font_hw_ratio = #text / normalized_width * 0.95
     end
-
-    ---Measure text width and normalize to a font size of 1
-    ---text has to be ass safe
-    local function normalized_text_width(text, size, horizontal)
-        local align, rotation = horizontal and 7 or 1, horizontal and 0 or -90
-        local template = '{\\pos(0,0)\\rDefault\\blur0\\bord0\\shad0\\q2\\an%s\\fs%s\\fn%s\\frz%s}%s'
-        local x1, y1 = nil, nil
-        size = size / 0.8
-        -- prevent endless loop
-        local repetitions_left = 5
-        repeat
-            size = size * 0.8
-            local ass = assdraw.ass_new()
-            ass.text = template:format(align, size, opts.font, rotation, text)
-            _, _, x1, y1 = measure_bounds(ass.text)
-            repetitions_left = repetitions_left - 1
-            -- make sure nothing got clipped
-        until (x1 and x1 < osd_width and y1 < osd_height) or repetitions_left == 0
-        local width = (repetitions_left == 0 and not x1) and 0 or (horizontal and x1 or y1)
-        return width / size, horizontal and osd_width or osd_height
-    end
-
-    local function fit_on_osd(text)
-        local estimated_width = #text * width_length_ratio
-        if osd_width >= osd_height then
-            -- Fill the osd as much as possible, bigger is more accurate.
-            return math.min(osd_width / estimated_width, osd_height), true
-        else
-            return math.min(osd_height / estimated_width, osd_width), false
-        end
-    end
-
-    local measured_font_hw_ratio = nil
-    function get_font_hw_ratio()
-        local font_hw_ratio = tonumber(opts.font_hw_ratio)
-        if font_hw_ratio then
-            return font_hw_ratio
-        end
-        if not measured_font_hw_ratio then
-            local alphabet = 'abcdefghijklmnopqrstuvwxyz'
-            local text = alphabet:rep(3)
-            update_osd_resolution()
-            local size, horizontal = fit_on_osd(text)
-            local normalized_width = normalized_text_width(text, size * 0.9, horizontal)
-            measured_font_hw_ratio = #text / normalized_width * 0.95
-        end
-        return measured_font_hw_ratio
-    end
+    return measured_font_hw_ratio
 end
 
--- Add a line to the log buffer (which is limited to 100 lines)
-function log_add(text, style, terminal_style)
-    local log_buffer = log_buffers[id]
-    log_buffer[#log_buffer + 1] = {
-        text = text,
-        style = style or '',
-        terminal_style = terminal_style or '',
-    }
-    if #log_buffer > 100 then
-        table.remove(log_buffer, 1)
-    end
-
-    if repl_active then
-        if not update_timer:is_enabled() then
-            update()
-            update_timer:resume()
-        else
-            pending_update = true
-        end
-    end
-end
 
 -- Escape a string for verbatim display on the OSD
-function ass_escape(str)
+local function ass_escape(str)
     return mp.command_native({'escape-ass', str})
+end
+
+local function calculate_max_log_lines()
+    if not mp.get_property_native('vo-configured') then
+        -- Subtract 1 for the input line and for each line in the status line.
+        -- This does not detect wrapped lines.
+        return mp.get_property_native('term-size/h', 24) - 2 -
+               select(2, mp.get_property('term-status-msg'):gsub('\\n', ''))
+    end
+
+    return math.floor(mp.get_property_native('osd-height')
+                      / mp.get_property_native('display-hidpi-scale', 1)
+                      / opts.scale
+                      * (1 - global_margins.t - global_margins.b)
+                      / opts.font_size
+                      -- Subtract 1 for the input line and 1 for the newline
+                      -- between the log and the input line.
+                      - 2)
 end
 
 -- Takes a list of strings, a max width in characters and
@@ -237,7 +271,7 @@ end
 -- The result contains at least one column.
 -- Rows are cut off from the top if rows_max is specified.
 -- returns a string containing the formatted table and the row count
-function format_table(list, width_max, rows_max)
+local function format_table(list, width_max, rows_max)
     if #list == 0 then
         return '', 0
     end
@@ -259,9 +293,10 @@ function format_table(list, width_max, rows_max)
     -- use as many columns as possible
     for columns = 2, list_size do
         local rows_lower_bound = math.min(rows_max, math.ceil(list_size / columns))
-        local rows_upper_bound = math.min(rows_max, list_size, math.ceil(list_size / (columns - 1) - 1))
+        local rows_upper_bound = math.min(rows_max, list_size,
+                                          math.ceil(list_size / (columns - 1) - 1))
         for rows = rows_upper_bound, rows_lower_bound, -1 do
-            cw = {}
+            local cw = {}
             width_total = 0
 
             -- find out width of each column
@@ -323,12 +358,108 @@ function format_table(list, width_max, rows_max)
     return table.concat(rows, ass_escape('\n')), row_count
 end
 
+local function fuzzy_find(needle, haystacks)
+    local result = require 'mp.fzy'.filter(needle, haystacks)
+    table.sort(result, function (i, j)
+        return i[3] > j[3]
+    end)
+    for i, value in ipairs(result) do
+        result[i] = value[1]
+    end
+    return result
+end
+
+local function populate_log_with_matches(max_width)
+    if not selectable_items or selected_match == 0 then
+        return
+    end
+
+    log_buffers[id] = {}
+    local log = log_buffers[id]
+
+    local max_log_lines = calculate_max_log_lines()
+
+    if selected_match < first_match_to_print then
+        first_match_to_print = selected_match
+    end
+
+    if first_match_to_print > 1 then
+        -- Reserve the first line for "n hidden items".
+        max_log_lines = max_log_lines - 1
+    end
+
+    if selected_match > first_match_to_print + max_log_lines - 1 then
+        -- Reserve the first line for "n hidden items" if it wasn't already.
+        if first_match_to_print == 1 then
+            max_log_lines = max_log_lines - 1
+        end
+
+        first_match_to_print = selected_match - max_log_lines + 1
+    end
+
+    local last_match_to_print  = math.min(first_match_to_print + max_log_lines - 1,
+                                          #matches)
+
+    if last_match_to_print < #matches then
+        -- Reserve the last line for "n hidden items".
+        last_match_to_print = last_match_to_print - 1
+
+        -- After decrementing the last match to print, we need to check if the
+        -- selected match is beyond the last match to print again, and shift
+        -- both the first and last match to print when it is.
+        if selected_match > last_match_to_print then
+            if first_match_to_print == 1 then
+                -- Reserve the first line for "2 hidden items".
+                first_match_to_print = first_match_to_print + 1
+            end
+
+            first_match_to_print = first_match_to_print + 1
+            last_match_to_print = last_match_to_print + 1
+        end
+    end
+
+    -- When there is only 1 hidden item, print it in the previously reserved
+    -- line instead of printing "1 hidden items".
+    if first_match_to_print == 2 then
+        first_match_to_print = 1
+    end
+    if last_match_to_print == #matches - 1 then
+        last_match_to_print = #matches
+    end
+
+    if first_match_to_print > 1 then
+        log[1] = {
+            text = '↑ (' .. (first_match_to_print - 1) .. ' hidden items)' .. '\n',
+            style = styles.disabled,
+            terminal_style = terminal_styles.disabled,
+        }
+    end
+
+    for i = first_match_to_print, last_match_to_print do
+        log[#log + 1] = {
+            text = truncate_utf8(matches[i].text, max_width) .. '\n',
+            style = i == selected_match and styles.selected_suggestion or '',
+            terminal_style = i == selected_match and terminal_styles.selected_suggestion or '',
+        }
+    end
+
+    if last_match_to_print < #matches then
+        log[#log + 1] = {
+            text = '↓ (' .. (#matches - last_match_to_print) .. ' hidden items)' .. '\n',
+            style = styles.disabled,
+            terminal_style = terminal_styles.disabled,
+        }
+    end
+end
+
 local function print_to_terminal()
     -- Clear the log after closing the console.
     if not repl_active then
         mp.osd_message('')
         return
     end
+
+    populate_log_with_matches(mp.get_property_native('term-size/w', 80))
 
     local log = ''
     for _, log_line in ipairs(log_buffers[id]) do
@@ -359,7 +490,7 @@ local function print_to_terminal()
 end
 
 -- Render the REPL and console as an ASS OSD
-function update()
+local function update()
     pending_update = false
 
     -- Unlike vo-configured, current-vo doesn't become falsy while switching VO,
@@ -373,7 +504,7 @@ function update()
 
     dpi_scale = dpi_scale * opts.scale
 
-    local screenx, screeny, aspect = mp.get_osd_size()
+    local screenx, screeny = mp.get_osd_size()
     screenx = screenx / dpi_scale
     screeny = screeny / dpi_scale
 
@@ -413,15 +544,14 @@ function update()
     -- Render log messages as ASS.
     -- This will render at most screeny / font_size - 1 messages.
 
-    -- lines above the prompt
-    -- subtract 1.5 to account for the input line
-    local screeny_factor = (1 - global_margins.t - global_margins.b)
-    local lines_max = math.ceil(screeny * screeny_factor / opts.font_size - 1.5)
+    local lines_max = calculate_max_log_lines()
     -- Estimate how many characters fit in one line
     local width_max = math.ceil(screenx / opts.font_size * get_font_hw_ratio())
 
     local suggestions, rows = format_table(suggestion_buffer, width_max, lines_max)
     local suggestion_ass = style .. styles.suggestion .. suggestions
+
+    populate_log_with_matches(width_max)
 
     local log_ass = ''
     local log_buffer = log_buffers[id]
@@ -436,7 +566,7 @@ function update()
 
     ass:new_event()
     ass:an(1)
-    ass:pos(2, screeny - 2 - global_margins.b * screeny)
+    ass:pos(6, screeny - 6 - global_margins.b * screeny)
     ass:append(log_ass .. '\\N')
     if #suggestions > 0 then
         ass:append(suggestion_ass .. '\\N')
@@ -449,7 +579,7 @@ function update()
     -- cursor appear in front of the text.
     ass:new_event()
     ass:an(1)
-    ass:pos(2, screeny - 2 - global_margins.b * screeny)
+    ass:pos(6, screeny - 6 - global_margins.b * screeny)
     ass:append(style .. '{\\alpha&HFF&}' .. ass_escape(prompt) .. ' ' .. before_cur)
     ass:append(cglyph)
     ass:append(style .. '{\\alpha&HFF&}' .. after_cur)
@@ -457,108 +587,74 @@ function update()
     mp.set_osd_ass(screenx, screeny, ass.text)
 end
 
--- Set the REPL visibility ("enable", Esc)
-function set_active(active)
-    if active == repl_active then return end
-    if active then
-        repl_active = true
-        insert_mode = false
-        mp.enable_key_bindings('console-input', 'allow-hide-cursor+allow-vo-dragging')
-        define_key_bindings()
-
-        if not input_caller then
-            prompt = default_prompt
-            id = default_id
-            history = histories[id]
-            history_pos = #history + 1
-            mp.enable_messages('terminal-default')
-        end
-    else
-        repl_active = false
-        suggestion_buffer = {}
-        undefine_key_bindings()
-        mp.enable_messages('silent:terminal-default')
-
-        if input_caller then
-            mp.commandv('script-message-to', input_caller, 'input-event',
-                        'closed', line, cursor)
-            input_caller = nil
-            line = ''
-            cursor = 1
-        end
-        collectgarbage()
-    end
-    update()
-end
-
--- Show the repl if hidden and replace its contents with 'text'
--- (script-message-to repl type)
-function show_and_type(text, cursor_pos)
-    text = text or ''
-    cursor_pos = tonumber(cursor_pos)
-
-    -- Save the line currently being edited, just in case
-    if line ~= text and line ~= '' and history[#history] ~= line then
-        history_add(line)
-    end
-
-    line = text
-    if cursor_pos ~= nil and cursor_pos >= 1
-       and cursor_pos <= line:len() + 1 then
-        cursor = math.floor(cursor_pos)
-    else
-        cursor = line:len() + 1
-    end
-    history_pos = #history + 1
-    insert_mode = false
-    if repl_active then
+local update_timer = nil
+update_timer = mp.add_periodic_timer(0.05, function()
+    if pending_update then
         update()
     else
-        set_active(true)
+        update_timer:kill()
+    end
+end)
+update_timer:kill()
+
+-- Add a line to the log buffer (which is limited to 100 lines)
+local function log_add(text, style, terminal_style)
+    local log_buffer = log_buffers[id]
+    log_buffer[#log_buffer + 1] = {
+        text = text,
+        style = style or '',
+        terminal_style = terminal_style or '',
+    }
+    if #log_buffer > 100 then
+        table.remove(log_buffer, 1)
+    end
+
+    if repl_active then
+        if not update_timer:is_enabled() then
+            update()
+            update_timer:resume()
+        else
+            pending_update = true
+        end
     end
 end
 
--- Naive helper function to find the next UTF-8 character in 'str' after 'pos'
--- by skipping continuation bytes. Assumes 'str' contains valid UTF-8.
-function next_utf8(str, pos)
-    if pos > str:len() then return pos end
-    repeat
-        pos = pos + 1
-    until pos > str:len() or str:byte(pos) < 0x80 or str:byte(pos) > 0xbf
-    return pos
-end
-
--- As above, but finds the previous UTF-8 character in 'str' before 'pos'
-function prev_utf8(str, pos)
-    if pos <= 1 then return pos end
-    repeat
-        pos = pos - 1
-    until pos <= 1 or str:byte(pos) < 0x80 or str:byte(pos) > 0xbf
-    return pos
-end
-
-function len_utf8(str)
-    local len = 0
-    local pos = 1
-    while pos <= str:len() do
-        pos = next_utf8(str, pos)
-        len = len + 1
+-- Add a line to the history and deduplicate
+local function history_add(text)
+    if opts.history_dedup then
+        -- More recent entries are more likely to be repeated
+        for i = #history, 1, -1 do
+            if history[i] == text then
+                table.remove(history, i)
+                break
+            end
+        end
     end
-    return len
+
+    history[#history + 1] = text
 end
 
 local function handle_edit()
+    if selectable_items then
+        matches = {}
+        selected_match = 1
+
+        for i, match in ipairs(fuzzy_find(line, selectable_items)) do
+            matches[i] = { index = match, text = selectable_items[match] }
+        end
+    end
+
     suggestion_buffer = {}
     update()
 
     if input_caller then
         mp.commandv('script-message-to', input_caller, 'input-event', 'edited',
-                    line)
+                    utils.format_json({line}))
     end
 end
 
 -- Insert a character at the current cursor position (any_unicode)
-function handle_char_input(c)
+local function handle_char_input(c)
     if insert_mode then
         line = line:sub(1, cursor - 1) .. c .. line:sub(next_utf8(line, cursor))
     else
@@ -569,7 +665,7 @@ function handle_char_input(c)
 end
 
 -- Remove the character behind the cursor (Backspace)
-function handle_backspace()
+local function handle_backspace()
     if cursor <= 1 then return end
     local prev = prev_utf8(line, cursor)
     line = line:sub(1, prev - 1) .. line:sub(cursor)
@@ -578,33 +674,33 @@ function handle_backspace()
 end
 
 -- Remove the character in front of the cursor (Del)
-function handle_del()
+local function handle_del()
     if cursor > line:len() then return end
     line = line:sub(1, cursor - 1) .. line:sub(next_utf8(line, cursor))
     handle_edit()
 end
 
 -- Toggle insert mode (Ins)
-function handle_ins()
+local function handle_ins()
     insert_mode = not insert_mode
 end
 
 -- Move the cursor to the next character (Right)
-function next_char(amount)
+local function next_char()
     cursor = next_utf8(line, cursor)
     suggestion_buffer = {}
     update()
 end
 
 -- Move the cursor to the previous character (Left)
-function prev_char(amount)
+local function prev_char()
     cursor = prev_utf8(line, cursor)
     suggestion_buffer = {}
     update()
 end
 
 -- Clear the current line (Ctrl+C)
-function clear()
+local function clear()
     line = ''
     cursor = 1
     insert_mode = false
@@ -614,7 +710,7 @@ end
 
 -- Close the REPL if the current line is empty, otherwise delete the next
 -- character (Ctrl+D)
-function maybe_exit()
+local function maybe_exit()
     if line == '' then
         set_active(false)
     else
@@ -622,7 +718,7 @@ function maybe_exit()
     end
 end
 
-function help_command(param)
+local function help_command(param)
     local cmdlist = mp.get_property_native('command-list')
     table.sort(cmdlist, function(c1, c2)
         return c1.name < c2.name
@@ -666,23 +762,8 @@ function help_command(param)
     log_add(output)
 end
 
--- Add a line to the history and deduplicate
-function history_add(text)
-    if opts.history_dedup then
-        -- More recent entries are more likely to be repeated
-        for i = #history, 1, -1 do
-            if history[i] == text then
-                table.remove(history, i)
-                break
-            end
-        end
-    end
-
-    history[#history + 1] = text
-end
-
 -- Run the current command and clear the line (Enter)
-function handle_enter()
+local function handle_enter()
     if line == '' and input_caller == nil then
         return
     end
@@ -690,9 +771,15 @@ function handle_enter()
         history_add(line)
     end
 
-    if input_caller then
+    if selectable_items then
+        if #matches > 0 then
+            mp.commandv('script-message-to', input_caller, 'input-event', 'submit',
+                        utils.format_json({matches[selected_match].index}))
+        end
+        set_active(false)
+    elseif input_caller then
         mp.commandv('script-message-to', input_caller, 'input-event', 'submit',
-                    line)
+                    utils.format_json({line}))
     else
         -- match "help [<text>]", return <text> or "", strip all whitespace
         local help = line:match('^%s*help%s+(.-)%s*$') or
@@ -708,7 +795,7 @@ function handle_enter()
 end
 
 -- Go to the specified position in the command history
-function go_history(new_pos)
+local function go_history(new_pos)
     local old_pos = history_pos
     history_pos = new_pos
 
@@ -744,23 +831,67 @@ function go_history(new_pos)
 end
 
 -- Go to the specified relative position in the command history (Up, Down)
-function move_history(amount)
+local function move_history(amount)
+    if selectable_items then
+        selected_match = selected_match + amount
+        if selected_match > #matches then
+            selected_match = 1
+        elseif selected_match < 1 then
+            selected_match = #matches
+        end
+        update()
+        return
+    end
+
     go_history(history_pos + amount)
 end
 
 -- Go to the first command in the command history (PgUp)
-function handle_pgup()
+local function handle_pgup()
+    if selectable_items then
+        -- We don't know whether to count the "n hidden items" lines here; an
+        -- offset of 2 is better with 1 extra line because it scrolls from the
+        -- last to the first visible match, while with both extra lines that is
+        -- done with +3. When there are no "n hidden items" lines selected_match
+        -- becomes 1 with any offset >= 1.
+        selected_match = math.max(selected_match - calculate_max_log_lines() + 2, 1)
+        update()
+        return
+    end
+
     go_history(1)
 end
 
 -- Stop browsing history and start editing a blank line (PgDown)
-function handle_pgdown()
+local function handle_pgdown()
+    if selectable_items then
+        selected_match = math.min(selected_match + calculate_max_log_lines() - 2, #matches)
+        update()
+        return
+    end
+
     go_history(#history + 1)
+end
+
+local function page_up_or_prev_char()
+    if selectable_items then
+        handle_pgup()
+    else
+        prev_char()
+    end
+end
+
+local function page_down_or_next_char()
+    if selectable_items then
+        handle_pgdown()
+    else
+        next_char()
+    end
 end
 
 -- Move to the start of the current word, or if already at the start, the start
 -- of the previous word. (Ctrl+Left)
-function prev_word()
+local function prev_word()
     -- This is basically the same as next_word() but backwards, so reverse the
     -- string in order to do a "backwards" find. This wouldn't be as annoying
     -- to do if Lua didn't insist on 1-based indexing.
@@ -771,394 +902,28 @@ end
 
 -- Move to the end of the current word, or if already at the end, the end of
 -- the next word. (Ctrl+Right)
-function next_word()
+local function next_word()
     cursor = select(2, line:find('%s*[^%s]*', cursor)) + 1
     suggestion_buffer = {}
     update()
 end
 
-local function command_list()
-    local commands = {}
-    for i, command in ipairs(mp.get_property_native('command-list')) do
-        commands[i] = command.name
-    end
-
-    return commands
-end
-
-local function command_list_and_help()
-    local commands = command_list()
-    commands[#commands + 1] = 'help'
-
-    return commands
-end
-
-local function property_list()
-    local properties = mp.get_property_native('property-list')
-
-    for _, sub_property in pairs({'video', 'audio', 'sub', 'sub2'}) do
-        properties[#properties + 1] = 'current-tracks/' .. sub_property
-    end
-
-    for _, option in ipairs(mp.get_property_native('options')) do
-        properties[#properties + 1] = 'options/' .. option
-        properties[#properties + 1] = 'file-local-options/' .. option
-        properties[#properties + 1] = 'option-info/' .. option
-
-        for _, sub_property in pairs({
-            'name', 'type', 'set-from-commandline', 'set-locally',
-            'default-value', 'min', 'max', 'choices',
-        }) do
-            properties[#properties + 1] = 'option-info/' .. option .. '/' ..
-                                          sub_property
-        end
-    end
-
-    return properties
-end
-
-local function profile_list()
-    local profiles = {}
-
-    for i, profile in ipairs(mp.get_property_native('profile-list')) do
-        profiles[i] = profile.name
-    end
-
-    return profiles
-end
-
-local function list_option_list()
-    local options = {}
-
-    -- Don't log errors for renamed and removed properties.
-    -- (Just mp.enable_messages('fatal') still logs them to the terminal.)
-    local msg_level_backup = mp.get_property('msg-level')
-    mp.set_property('msg-level', msg_level_backup == '' and 'cplayer=no'
-                                 or msg_level_backup .. ',cplayer=no')
-
-    for _, option in pairs(mp.get_property_native('options')) do
-        if mp.get_property('option-info/' .. option .. '/type', ''):find(' list$') then
-            options[#options + 1] = option
-        end
-    end
-
-    mp.set_property('msg-level', msg_level_backup)
-
-    return options
-end
-
-local function list_option_verb_list(option)
-    local type = mp.get_property('option-info/' .. option .. '/type')
-
-    if type == 'Key/value list' then
-        return {'add', 'append', 'set', 'remove'}
-    end
-
-    if type == 'String list' or type == 'Object settings list' then
-        return {'add', 'append', 'clr', 'pre', 'set', 'remove', 'toggle'}
-    end
-
-    return {}
-end
-
-local function choice_list(option)
-    local info = mp.get_property_native('option-info/' .. option, {})
-
-    if info.type == 'Flag' then
-        return { 'no', 'yes' }
-    end
-
-    return info.choices or {}
-end
-
-local function find_commands_with_file_argument()
-    if #file_commands > 0 then
-        return file_commands
-    end
-
-    for _, command in pairs(mp.get_property_native('command-list')) do
-        if command.args[1] and
-           (command.args[1].name == 'filename' or command.args[1].name == 'url') then
-            file_commands[#file_commands + 1] = command.name
-        end
-    end
-
-    return file_commands
-end
-
-local function file_list(directory)
-    if directory == '' then
-        directory = '.'
-    end
-
-    local files = utils.readdir(directory, 'files') or {}
-
-    for _, dir in pairs(utils.readdir(directory, 'dirs') or {}) do
-        files[#files + 1] = dir .. path_separator
-    end
-
-    return files
-end
-
--- List of tab-completions:
---   pattern: A Lua pattern used in string:match. It should return the start
---            position of the word to be completed in the first capture (using
---            the empty parenthesis notation "()"). In patterns with 2
---            captures, the first determines the completions, and the second is
---            the start of the word to be completed.
---   list: A function that returns a list of candidate completion values.
---   append: An extra string to be appended to the end of a successful
---           completion. It is only appended if 'list' contains exactly one
---           match.
-function build_completers()
-    local completers = {
-        { pattern = '^%s*()[%w_-]*$', list = command_list_and_help, append = ' ' },
-        { pattern = '^%s*help%s+()[%w_-]*$', list = command_list },
-        { pattern = '^%s*set%s+"?([%w_-]+)"?%s+()%S*$', list = choice_list },
-        { pattern = '^%s*set%s+"?([%w_-]+)"?%s+"()%S*$', list = choice_list, append = '"' },
-        { pattern = '^%s*cycle[-_]values%s+"?([%w_-]+)"?.-%s+()%S*$', list = choice_list, append = " " },
-        { pattern = '^%s*cycle[-_]values%s+"?([%w_-]+)"?.-%s+"()%S*$', list = choice_list, append = '" ' },
-        { pattern = '^%s*apply[-_]profile%s+"()%S*$', list = profile_list, append = '"' },
-        { pattern = '^%s*apply[-_]profile%s+()%S*$', list = profile_list },
-        { pattern = '^%s*change[-_]list%s+()[%w_-]*$', list = list_option_list, append = ' ' },
-        { pattern = '^%s*change[-_]list%s+()"[%w_-]*$', list = list_option_list, append = '" ' },
-        { pattern = '^%s*change[-_]list%s+"?([%w_-]+)"?%s+()%a*$', list = list_option_verb_list, append = ' ' },
-        { pattern = '^%s*change[-_]list%s+"?([%w_-]+)"?%s+"()%a*$', list = list_option_verb_list, append = '" ' },
-        { pattern = '^%s*([av]f)%s+()%a*$', list = list_option_verb_list, append = ' ' },
-        { pattern = '^%s*([av]f)%s+"()%a*$', list = list_option_verb_list, append = '" ' },
-        { pattern = '${[=>]?()[%w_/-]*$', list = property_list, append = '}' },
-    }
-
-    for _, command in pairs({'set', 'add', 'cycle', 'cycle[-_]values', 'multiply'}) do
-        completers[#completers + 1] = {
-            pattern = '^%s*' .. command .. '%s+()[%w_/-]*$',
-            list = property_list,
-            append = ' ',
-        }
-        completers[#completers + 1] = {
-            pattern = '^%s*' .. command .. '%s+"()[%w_/-]*$',
-            list = property_list,
-            append = '" ',
-        }
-    end
-
-
-    for _, command in pairs(find_commands_with_file_argument()) do
-        completers[#completers + 1] = {
-            pattern = '^%s*' .. command:gsub('-', '[-_]') ..
-                      '%s+["\']?(.-)()[^' .. path_separator ..']*$',
-            list = file_list,
-            -- Unfortunately appending " here would append it everytime a
-            -- directory is fully completed, even if you intend to browse it
-            -- afterwards.
-        }
-    end
-
-    return completers
-end
-
-function common_prefix_length(s1, s2)
-    local common_count = 0
-    for i = 1, #s1 do
-        if s1:byte(i) ~= s2:byte(i) then
-            break
-        end
-        common_count = common_count + 1
-    end
-    return common_count
-end
-
-function max_overlap_length(s1, s2)
-    for s1_offset = 0, #s1 - 1 do
-        local match = true
-        for i = 1, #s1 - s1_offset do
-            if s1:byte(s1_offset + i) ~= s2:byte(i) then
-                match = false
-                break
-            end
-        end
-        if match then
-            return #s1 - s1_offset
-        end
-    end
-    return 0
-end
-
--- If str starts with the first or last characters of prefix, strip them.
-local function strip_common_characters(str, prefix)
-    return str:sub(1 + math.max(
-    common_prefix_length(prefix, str),
-    max_overlap_length(prefix, str)))
-end
-
--- Find the longest common case-sensitive prefix of the entries in "list".
-local function find_common_prefix(list)
-    local prefix = list[1]
-
-    for i = 2, #list do
-        prefix = prefix:sub(1, common_prefix_length(prefix, list[i]))
-    end
-
-    return prefix
-end
-
--- Return the entries of "list" beginning with "part" and the longest common
--- prefix of the matches.
-local function complete_match(part, list)
-    local completions = {}
-
-    for _, candidate in pairs(list) do
-        if candidate:sub(1, part:len()) == part then
-            completions[#completions + 1] = candidate
-        end
-    end
-
-    local prefix = find_common_prefix(completions)
-
-    if opts.case_sensitive then
-        return completions, prefix
-    end
-
-    completions = {}
-    local lower_case_completions = {}
-    local lower_case_part = part:lower()
-
-    for _, candidate in pairs(list) do
-        if candidate:sub(1, part:len()):lower() == lower_case_part then
-            completions[#completions + 1] = candidate
-            lower_case_completions[#lower_case_completions + 1] = candidate:lower()
-        end
-    end
-
-    local lower_case_prefix = find_common_prefix(lower_case_completions)
-
-    -- Behave like GNU readline with completion-ignore-case On.
-    -- part = 'fooBA', completions = {'foobarbaz', 'fooBARqux'} =>
-    -- prefix = 'fooBARqux', lower_case_prefix = 'foobar', return 'fooBAR'
-    if prefix then
-        return completions, prefix:sub(1, lower_case_prefix:len())
-    end
-
-    -- part = 'fooba', completions = {'fooBARbaz', 'fooBarqux'} =>
-    -- prefix = nil, lower_case_prefix ='foobar', return 'fooBAR'
-    if lower_case_prefix then
-        return completions, completions[1]:sub(1, lower_case_prefix:len())
-    end
-
-    return {}, part
-end
-
-local function cycle_through_suggestions(backwards)
-    selected_suggestion_index = selected_suggestion_index + (backwards and -1 or 1)
-
-    if selected_suggestion_index > #suggestion_buffer then
-        selected_suggestion_index = 1
-    elseif selected_suggestion_index < 1 then
-        selected_suggestion_index = #suggestion_buffer
-    end
-
-    local before_cur = line:sub(1, completion_start_position - 1) ..
-                       suggestion_buffer[selected_suggestion_index] .. completion_append
-    line = before_cur .. strip_common_characters(line:sub(cursor), completion_append)
-    cursor = before_cur:len() + 1
-    update()
-end
-
--- Complete the option or property at the cursor (TAB)
-function complete(backwards)
-    if #suggestion_buffer > 0 then
-        cycle_through_suggestions(backwards)
-        return
-    end
-
-    if input_caller then
-        completion_old_line = line
-        completion_old_cursor = cursor
-        mp.commandv('script-message-to', input_caller, 'input-event',
-                    'complete', line:sub(1, cursor - 1))
-        return
-    end
-
-    local before_cur = line:sub(1, cursor - 1)
-    local after_cur = line:sub(cursor)
-
-    -- Try the first completer that works
-    for _, completer in ipairs(build_completers()) do
-        -- Completer patterns should return the start of the word to be
-        -- completed as the first capture.
-        local s2
-        completion_start_position, s2 = before_cur:match(completer.pattern)
-        if not completion_start_position then
-            -- Multiple input commands can be separated by semicolons, so all
-            -- completions that are anchored at the start of the string with
-            -- '^' can start from a semicolon as well. Replace ^ with ; and try
-            -- to match again.
-            completion_start_position, s2 =
-                before_cur:match(completer.pattern:gsub('^^', ';'))
-        end
-        if completion_start_position then
-            local hint
-            if s2 then
-                hint = completion_start_position
-                completion_start_position = s2
-            end
-
-            -- Expand ~ in file completion.
-            if completer.list == file_list and hint:find('^~' .. path_separator) then
-                local home = mp.command_native({'expand-path', '~/'})
-                before_cur = before_cur:sub(1, completion_start_position - #hint - 1) ..
-                             home ..
-                             before_cur:sub(completion_start_position - #hint + 1)
-                hint = home .. hint:sub(2)
-                completion_start_position = completion_start_position + #home - 1
-            end
-
-            -- If the completer's pattern found a word, check the completer's
-            -- list for possible completions
-            local part = before_cur:sub(completion_start_position)
-            local completions, prefix = complete_match(part, completer.list(hint))
-            if #completions > 0 then
-                -- If there was only one full match from the list, add
-                -- completer.append to the final string. This is normally a
-                -- space or a quotation mark followed by a space.
-                completion_append = completer.append or ''
-                if #completions == 1 then
-                    prefix = prefix .. completion_append
-                    after_cur = strip_common_characters(after_cur, completion_append)
-                else
-                    table.sort(completions)
-                    suggestion_buffer = completions
-                    selected_suggestion_index = 0
-                end
-
-                -- Insert the completion and update
-                before_cur = before_cur:sub(1, completion_start_position - 1) ..
-                             prefix
-                cursor = before_cur:len() + 1
-                line = before_cur .. after_cur
-                update()
-                return
-            end
-        end
-    end
-end
-
 -- Move the cursor to the beginning of the line (HOME)
-function go_home()
+local function go_home()
     cursor = 1
     suggestion_buffer = {}
     update()
 end
 
 -- Move the cursor to the end of the line (END)
-function go_end()
+local function go_end()
     cursor = line:len() + 1
     suggestion_buffer = {}
     update()
 end
 
 -- Delete from the cursor to the beginning of the word (Ctrl+Backspace)
-function del_word()
+local function del_word()
     local before_cur = line:sub(1, cursor - 1)
     local after_cur = line:sub(cursor)
 
@@ -1169,7 +934,7 @@ function del_word()
 end
 
 -- Delete from the cursor to the end of the word (Ctrl+Del)
-function del_next_word()
+local function del_next_word()
     if cursor > line:len() then return end
 
     local before_cur = line:sub(1, cursor - 1)
@@ -1181,26 +946,26 @@ function del_next_word()
 end
 
 -- Delete from the cursor to the end of the line (Ctrl+K)
-function del_to_eol()
+local function del_to_eol()
     line = line:sub(1, cursor - 1)
     handle_edit()
 end
 
 -- Delete from the cursor back to the start of the line (Ctrl+U)
-function del_to_start()
+local function del_to_start()
     line = line:sub(cursor)
     cursor = 1
     handle_edit()
 end
 
 -- Empty the log buffer of all messages (Ctrl+L)
-function clear_log_buffer()
+local function clear_log_buffer()
     log_buffers[id] = {}
     update()
 end
 
 -- Returns a string of UTF-8 text from the clipboard (or the primary selection)
-function get_clipboard(clip)
+local function get_clipboard(clip)
     if platform == 'x11' then
         local res = utils.subprocess({
             args = { 'xclip', '-selection', clip and 'clipboard' or 'primary', '-out' },
@@ -1256,7 +1021,7 @@ end
 
 -- Paste text from the window-system's clipboard. 'clip' determines whether the
 -- clipboard or the primary selection buffer is used (on X11 and Wayland only.)
-function paste(clip)
+local function paste(clip)
     local text = get_clipboard(clip)
     local before_cur = line:sub(1, cursor - 1)
     local after_cur = line:sub(cursor)
@@ -1265,9 +1030,462 @@ function paste(clip)
     handle_edit()
 end
 
+local function text_input(info)
+    if info.key_text and (info.event == "press" or info.event == "down"
+                          or info.event == "repeat")
+    then
+        handle_char_input(info.key_text)
+    end
+end
+
+local function command_list()
+    local commands = {}
+    for i, command in ipairs(mp.get_property_native('command-list')) do
+        commands[i] = command.name
+    end
+
+    return commands
+end
+
+local function property_list()
+    local properties = mp.get_property_native('property-list')
+
+    for _, sub_property in pairs({'video', 'audio', 'sub', 'sub2'}) do
+        properties[#properties + 1] = 'current-tracks/' .. sub_property
+    end
+
+    for _, option in ipairs(mp.get_property_native('options')) do
+        properties[#properties + 1] = 'options/' .. option
+        properties[#properties + 1] = 'file-local-options/' .. option
+        properties[#properties + 1] = 'option-info/' .. option
+
+        for _, sub_property in pairs({
+            'name', 'type', 'set-from-commandline', 'set-locally',
+            'expects-file', 'default-value', 'min', 'max', 'choices',
+        }) do
+            properties[#properties + 1] = 'option-info/' .. option .. '/' ..
+                                          sub_property
+        end
+    end
+
+    return properties
+end
+
+local function profile_list()
+    local profiles = {}
+
+    for i, profile in ipairs(mp.get_property_native('profile-list')) do
+        profiles[i] = profile.name
+    end
+
+    return profiles
+end
+
+local function list_option_list()
+    local options = {}
+
+    -- Don't log errors for renamed and removed properties.
+    -- (Just mp.enable_messages('fatal') still logs them to the terminal.)
+    local msg_level_backup = mp.get_property('msg-level')
+    mp.set_property('msg-level', msg_level_backup == '' and 'cplayer=no'
+                                 or msg_level_backup .. ',cplayer=no')
+
+    for _, option in pairs(mp.get_property_native('options')) do
+        if mp.get_property('option-info/' .. option .. '/type', ''):find(' list$') then
+            options[#options + 1] = option
+        end
+    end
+
+    mp.set_property('msg-level', msg_level_backup)
+
+    return options
+end
+
+local function list_option_action_list(option)
+    local type = mp.get_property('option-info/' .. option .. '/type')
+
+    if type == 'Key/value list' then
+        return {'add', 'append', 'set', 'remove'}
+    end
+
+    if type == 'String list' or type == 'Object settings list' then
+        return {'add', 'append', 'clr', 'pre', 'set', 'remove', 'toggle'}
+    end
+end
+
+local function list_option_value_list(option)
+    local values = mp.get_property_native(option)
+
+    if type(values) ~= 'table' then
+        return
+    end
+
+    if type(values[1]) ~= 'table' then
+        return values
+    end
+
+    for i, value in ipairs(values) do
+        values[i] = value.label and '@' .. value.label or value.name
+    end
+
+    return values
+end
+
+local function has_file_argument(candidate_command)
+    for _, command in pairs(mp.get_property_native('command-list')) do
+        if command.name == candidate_command then
+            return command.args[1] and
+                   (command.args[1].name == 'filename' or command.args[1].name == 'url')
+        end
+    end
+end
+
+local function file_list(directory)
+    if directory == '' then
+        directory = '.'
+    end
+
+    local files = utils.readdir(directory, 'files') or {}
+
+    for _, dir in pairs(utils.readdir(directory, 'dirs') or {}) do
+        files[#files + 1] = dir .. path_separator
+    end
+
+    return files
+end
+
+local function handle_file_completion(before_cur, path_pos)
+    local directory, last_component_pos =
+        before_cur:sub(path_pos):match('(.-)()[^' .. path_separator ..']*$')
+    completion_pos = path_pos + last_component_pos - 1
+
+    if directory:find('^~' .. path_separator) then
+        local home = mp.command_native({'expand-path', '~/'})
+        before_cur = before_cur:sub(1, completion_pos - #directory - 1) ..
+                     home ..
+                     before_cur:sub(completion_pos - #directory + 1)
+        directory = home .. directory:sub(2)
+        completion_pos = completion_pos + #home - 1
+    end
+
+    -- Don't use completion_append for file completion to not add quotes after
+    -- directories whose entries you may want to complete afterwards.
+    completion_append = ''
+
+    return file_list(directory), before_cur
+end
+
+local function handle_choice_completion(option, before_cur, path_pos)
+    local info = mp.get_property_native('option-info/' .. option, {})
+
+    if info.type == 'Flag' then
+        return { 'no', 'yes' }, before_cur
+    end
+
+    if info['expects-file'] then
+        return handle_file_completion(before_cur, path_pos)
+    end
+
+    return info.choices, before_cur
+end
+
+local function common_prefix_length(s1, s2)
+    local common_count = 0
+    for i = 1, #s1 do
+        if s1:byte(i) ~= s2:byte(i) then
+            break
+        end
+        common_count = common_count + 1
+    end
+    return common_count
+end
+
+local function max_overlap_length(s1, s2)
+    for s1_offset = 0, #s1 - 1 do
+        local match = true
+        for i = 1, #s1 - s1_offset do
+            if s1:byte(s1_offset + i) ~= s2:byte(i) then
+                match = false
+                break
+            end
+        end
+        if match then
+            return #s1 - s1_offset
+        end
+    end
+    return 0
+end
+
+-- If str starts with the first or last characters of prefix, strip them.
+local function strip_common_characters(str, prefix)
+    return str:sub(1 + math.max(
+    common_prefix_length(prefix, str),
+    max_overlap_length(prefix, str)))
+end
+
+-- Find the longest common case-sensitive prefix of the entries in "list".
+local function find_common_prefix(list)
+    local prefix = list[1]
+
+    for i = 2, #list do
+        prefix = prefix:sub(1, common_prefix_length(prefix, list[i]))
+    end
+
+    return prefix
+end
+
+-- Return the entries of "list" beginning with "part" and the longest common
+-- prefix of the matches.
+local function complete_match(part, list)
+    local completions = {}
+
+    for _, candidate in pairs(list) do
+        if candidate:sub(1, part:len()) == part then
+            completions[#completions + 1] = candidate
+        end
+    end
+
+    local prefix = find_common_prefix(completions)
+
+    if opts.case_sensitive then
+        return completions, prefix or part
+    end
+
+    completions = {}
+    local lower_case_completions = {}
+    local lower_case_part = part:lower()
+
+    for _, candidate in pairs(list) do
+        if candidate:sub(1, part:len()):lower() == lower_case_part then
+            completions[#completions + 1] = candidate
+            lower_case_completions[#lower_case_completions + 1] = candidate:lower()
+        end
+    end
+
+    local lower_case_prefix = find_common_prefix(lower_case_completions)
+
+    -- Behave like GNU readline with completion-ignore-case On.
+    -- part = 'fooBA', completions = {'foobarbaz', 'fooBARqux'} =>
+    -- prefix = 'fooBARqux', lower_case_prefix = 'foobar', return 'fooBAR'
+    if prefix then
+        return completions, prefix:sub(1, lower_case_prefix:len())
+    end
+
+    -- part = 'fooba', completions = {'fooBARbaz', 'fooBarqux'} =>
+    -- prefix = nil, lower_case_prefix ='foobar', return 'fooBAR'
+    if lower_case_prefix then
+        return completions, completions[1]:sub(1, lower_case_prefix:len())
+    end
+
+    return {}, part
+end
+
+local function cycle_through_suggestions(backwards)
+    selected_suggestion_index = selected_suggestion_index + (backwards and -1 or 1)
+
+    if selected_suggestion_index > #suggestion_buffer then
+        selected_suggestion_index = 1
+    elseif selected_suggestion_index < 1 then
+        selected_suggestion_index = #suggestion_buffer
+    end
+
+    local before_cur = line:sub(1, completion_pos - 1) ..
+                       suggestion_buffer[selected_suggestion_index] .. completion_append
+    line = before_cur .. strip_common_characters(line:sub(cursor), completion_append)
+    cursor = before_cur:len() + 1
+    update()
+end
+
+-- Complete the option or property at the cursor (TAB)
+local function complete(backwards)
+    if #suggestion_buffer > 0 then
+        cycle_through_suggestions(backwards)
+        return
+    end
+
+    if input_caller then
+        completion_old_line = line
+        completion_old_cursor = cursor
+        mp.commandv('script-message-to', input_caller, 'input-event',
+                    'complete', utils.format_json({line:sub(1, cursor - 1)}))
+        return
+    end
+
+    local before_cur = line:sub(1, cursor - 1)
+    local after_cur = line:sub(cursor)
+    local tokens = {}
+    local first_useful_token_index = 1
+    local completions
+
+    local begin_new_token = true
+    local last_quote
+    for pos, char in before_cur:gmatch('()(.)') do
+        if char:find('[%s;]') and not last_quote then
+            begin_new_token = true
+            if char == ';' then
+                first_useful_token_index = #tokens + 1
+            end
+        elseif begin_new_token then
+            tokens[#tokens + 1] = { text = char, pos = pos }
+            last_quote = char:match('["\']')
+            begin_new_token = false
+        else
+            tokens[#tokens].text = tokens[#tokens].text .. char
+            if char == last_quote then
+                last_quote = nil
+            end
+        end
+    end
+
+    completion_append = last_quote or ''
+
+    -- Strip quotes from tokens.
+    for _, token in pairs(tokens) do
+        if token.text:find('^"') then
+            token.text = token.text:sub(2):gsub('"$', '')
+            token.pos = token.pos + 1
+        elseif token.text:find("^'") then
+            token.text = token.text:sub(2):gsub("'$", '')
+            token.pos = token.pos + 1
+        end
+    end
+
+    -- Skip command prefixes because it is not worth lumping them together with
+    -- command completions when they are useless for interactive usage.
+    local command_prefixes = {
+        ['osd-auto'] = true, ['no-osd'] = true, ['osd-bar'] = true,
+        ['osd-msg'] = true, ['osd-msg-bar'] = true, ['raw'] = true,
+        ['expand-properties'] = true, ['repeatable'] = true,
+        ['nonrepeatable'] = true, ['async'] = true, ['sync'] = true
+    }
+
+    while tokens[first_useful_token_index] and
+          command_prefixes[tokens[first_useful_token_index].text] do
+        first_useful_token_index = first_useful_token_index + 1
+    end
+
+    -- Add an empty token if the cursor is after whitespace to simplify
+    -- comparisons.
+    if before_cur == '' or before_cur:find('[%s;]$') then
+        tokens[#tokens + 1] = { text = "", pos = cursor }
+    end
+
+    local add_actions = {
+        ['add'] = true, ['append'] = true, ['pre'] = true, ['set'] = true
+    }
+
+    local first_useful_token = tokens[first_useful_token_index]
+
+    completion_pos = before_cur:match('${[=>]?()[%w_/-]*$')
+    if completion_pos then
+        completions = property_list()
+        completion_append = '} '
+    elseif #tokens == first_useful_token_index then
+        completions = command_list()
+        completions[#completions + 1] = 'help'
+        completion_pos = first_useful_token.pos
+        completion_append = completion_append .. ' '
+    elseif #tokens == first_useful_token_index + 1 then
+        if first_useful_token.text == 'set' or
+           first_useful_token.text == 'add' or
+           first_useful_token.text == 'cycle' or
+           first_useful_token.text == 'cycle-values' or
+           first_useful_token.text == 'multiply' then
+            completions = property_list()
+            completion_pos = tokens[first_useful_token_index + 1].pos
+            completion_append = completion_append .. ' '
+        elseif first_useful_token.text == 'help' then
+            completions = command_list()
+            completion_pos = tokens[first_useful_token_index + 1].pos
+        elseif first_useful_token.text == 'apply-profile' then
+            completions = profile_list()
+            completion_pos = tokens[first_useful_token_index + 1].pos
+        elseif first_useful_token.text == 'change-list' then
+            completions = list_option_list()
+            completion_pos = tokens[first_useful_token_index + 1].pos
+            completion_append = completion_append .. ' '
+        elseif first_useful_token.text == 'vf' or
+               first_useful_token.text == 'af' then
+            completions = list_option_action_list(first_useful_token.text)
+            completion_pos = tokens[first_useful_token_index + 1].pos
+            completion_append = completion_append .. ' '
+        elseif has_file_argument(first_useful_token.text) then
+            completions, before_cur =
+                handle_file_completion(before_cur, tokens[first_useful_token_index + 1].pos)
+        end
+    elseif first_useful_token.text == 'cycle-values' then
+        completion_pos = tokens[#tokens].pos
+        completion_append = completion_append .. ' '
+        completions, before_cur =
+            handle_choice_completion(tokens[first_useful_token_index + 1].text,
+                                     before_cur, tokens[#tokens].pos)
+    elseif #tokens == first_useful_token_index + 2 then
+        if first_useful_token.text == 'set' then
+            completion_pos = tokens[#tokens].pos
+            completions, before_cur =
+                handle_choice_completion(tokens[first_useful_token_index + 1].text,
+                                         before_cur,
+                                         tokens[first_useful_token_index + 2].pos)
+        elseif first_useful_token.text == 'change-list' then
+            completions = list_option_action_list(tokens[first_useful_token_index + 1].text)
+            completion_pos = tokens[first_useful_token_index + 2].pos
+            completion_append = completion_append .. ' '
+        elseif first_useful_token.text == 'vf' or
+               first_useful_token.text == 'af' then
+            if add_actions[tokens[first_useful_token_index + 1].text] then
+                completion_pos = tokens[#tokens].pos
+                completions, before_cur =
+                    handle_choice_completion(first_useful_token.text,
+                                             before_cur, tokens[#tokens].pos)
+            elseif tokens[first_useful_token_index + 1].text == 'remove' then
+                completions = list_option_value_list(first_useful_token.text)
+                completion_pos = tokens[#tokens].pos
+            end
+        end
+    elseif #tokens == first_useful_token_index + 3 then
+        if first_useful_token.text == 'change-list' then
+            if add_actions[tokens[first_useful_token_index + 2].text] then
+                completion_pos = tokens[#tokens].pos
+                completions, before_cur =
+                    handle_choice_completion(tokens[first_useful_token_index + 1].text,
+                                             before_cur, tokens[#tokens].pos)
+            elseif tokens[first_useful_token_index + 2].text == 'remove' then
+                completion_pos = tokens[#tokens].pos
+                completions = list_option_value_list(tokens[first_useful_token_index + 1].text)
+            end
+        elseif first_useful_token.text == 'dump-cache' then
+            completions, before_cur =
+                handle_file_completion(before_cur,
+                                       tokens[first_useful_token_index + 3].pos)
+        end
+    end
+
+    if completions == nil then
+        return
+    end
+
+    local prefix
+    completions, prefix =
+        complete_match(before_cur:sub(completion_pos), completions)
+
+    if #completions == 1 then
+        prefix = prefix .. completion_append
+        after_cur = strip_common_characters(after_cur, completion_append)
+    else
+        table.sort(completions)
+        suggestion_buffer = completions
+        selected_suggestion_index = 0
+    end
+
+    before_cur = before_cur:sub(1, completion_pos - 1) .. prefix
+    cursor = before_cur:len() + 1
+    line = before_cur .. after_cur
+    update()
+end
+
 -- List of input bindings. This is a weird mashup between common GUI text-input
 -- bindings and readline bindings.
-function get_bindings()
+local function get_bindings()
     local bindings = {
         { 'esc',         function() set_active(false) end       },
         { 'ctrl+[',      function() set_active(false) end       },
@@ -1285,9 +1503,9 @@ function get_bindings()
         { 'shift+ins',   function() paste(false) end            },
         { 'mbtn_mid',    function() paste(false) end            },
         { 'left',        function() prev_char() end             },
-        { 'ctrl+b',      function() prev_char() end             },
+        { 'ctrl+b',      function() page_up_or_prev_char() end  },
         { 'right',       function() next_char() end             },
-        { 'ctrl+f',      function() next_char() end             },
+        { 'ctrl+f',      function() page_down_or_next_char() end},
         { 'up',          function() move_history(-1) end        },
         { 'ctrl+p',      function() move_history(-1) end        },
         { 'wheel_up',    function() move_history(-1) end        },
@@ -1331,15 +1549,7 @@ function get_bindings()
     return bindings
 end
 
-local function text_input(info)
-    if info.key_text and (info.event == "press" or info.event == "down"
-                          or info.event == "repeat")
-    then
-        handle_char_input(info.key_text)
-    end
-end
-
-function define_key_bindings()
+local function define_key_bindings()
     if #key_bindings > 0 then
         return
     end
@@ -1354,11 +1564,73 @@ function define_key_bindings()
     key_bindings[#key_bindings + 1] = "_console_text"
 end
 
-function undefine_key_bindings()
+local function undefine_key_bindings()
     for _, name in ipairs(key_bindings) do
         mp.remove_key_binding(name)
     end
     key_bindings = {}
+end
+
+-- Set the REPL visibility ("enable", Esc)
+set_active = function (active)
+    if active == repl_active then return end
+    if active then
+        repl_active = true
+        insert_mode = false
+        mp.enable_key_bindings('console-input', 'allow-hide-cursor+allow-vo-dragging')
+        define_key_bindings()
+
+        if not input_caller then
+            prompt = default_prompt
+            id = default_id
+            history = histories[id]
+            history_pos = #history + 1
+            mp.enable_messages('terminal-default')
+        end
+    else
+        repl_active = false
+        suggestion_buffer = {}
+        undefine_key_bindings()
+        mp.enable_messages('silent:terminal-default')
+
+        if input_caller then
+            mp.commandv('script-message-to', input_caller, 'input-event',
+                        'closed', utils.format_json({line, cursor}))
+            input_caller = nil
+            line = ''
+            cursor = 1
+            selectable_items = nil
+        end
+        collectgarbage()
+    end
+    update()
+end
+
+-- Show the repl if hidden and replace its contents with 'text'
+-- (script-message-to repl type)
+local function show_and_type(text, cursor_pos)
+    text = text or ''
+    cursor_pos = tonumber(cursor_pos)
+
+    -- Save the line currently being edited, just in case
+    if line ~= text and line ~= '' and history[#history] ~= line then
+        history_add(line)
+    end
+
+    line = text
+    if cursor_pos ~= nil and cursor_pos >= 1
+        and cursor_pos <= line:len() + 1 then
+        cursor = math.floor(cursor_pos)
+    else
+        cursor = line:len() + 1
+    end
+    history_pos = #history + 1
+    insert_mode = false
+    if repl_active then
+        update()
+    else
+        set_active(true)
+    end
 end
 
 -- Add a global binding for enabling the REPL. While it's enabled, its bindings
@@ -1385,7 +1657,7 @@ mp.register_script_message('get-input', function (script_name, args)
     args = utils.parse_json(args)
     prompt = args.prompt or default_prompt
     line = args.default_text or ''
-    cursor = tonumber(args.cursor_position) or line:len() + 1
+    cursor = args.cursor_position or line:len() + 1
     id = args.id or script_name .. prompt
     if histories[id] == nil then
         histories[id] = {}
@@ -1393,6 +1665,16 @@ mp.register_script_message('get-input', function (script_name, args)
     end
     history = histories[id]
     history_pos = #history + 1
+
+    selectable_items = args.items
+    if selectable_items then
+        matches = {}
+        selected_match = args.default_item or 1
+        first_match_to_print = 1
+        for i, item in ipairs(selectable_items) do
+            matches[i] = { index = i, text = item }
+        end
+    end
 
     set_active(true)
     mp.commandv('script-message-to', input_caller, 'input-event', 'opened')
@@ -1453,7 +1735,7 @@ mp.register_script_message('complete', function(list, start_pos)
     if #completions > 1 then
         suggestion_buffer = completions
         selected_suggestion_index = 0
-        completion_start_position = start_pos
+        completion_pos = start_pos
         completion_append = ''
     end
 
@@ -1466,6 +1748,15 @@ mp.observe_property('osd-width', 'native', update)
 mp.observe_property('osd-height', 'native', update)
 mp.observe_property('display-hidpi-scale', 'native', update)
 mp.observe_property('focused', 'native', update)
+
+mp.observe_property("user-data/osc/margins", "native", function(_, val)
+    if val then
+        global_margins = val
+    else
+        global_margins = { t = 0, b = 0 }
+    end
+    update()
+end)
 
 -- Enable log messages. In silent mode, mpv will queue log messages in a buffer
 -- until enable_messages is called again without the silent: prefix.
