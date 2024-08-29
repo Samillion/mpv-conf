@@ -17,7 +17,7 @@ Before using, review the files first, to know what's going on.
 - BoxToWide ([Source](https://github.com/Samillion/mpv-boxtowide))
 - YTDLAutoFormat ([Source](https://github.com/Samillion/mpv-ytdlautoformat))
 
-## Note
+## Note (OSC)
 I modify Modern-F OSC to include the `On Top` button in the `mid` layout choice. The code I use is copied from the `reduced` layout, so it's all from the same author, just addition, basically.
 
 I find the mid layout function:
