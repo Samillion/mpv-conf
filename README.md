@@ -18,24 +18,26 @@ Before using, review the files first, to know what's going on.
 - YTDLAutoFormat ([Source](https://github.com/Samillion/mpv-ytdlautoformat))
 
 ## Note (OSC)
-I modify Modern-F OSC to include the `On Top` button in the `mid` layout choice. The code I use is copied from the `reduced` layout, so it's all from the same author, just addition, basically.
+I modify Modern-F OSC to replace the `Toggle Info` button with the `On Top` button in the `mid` layout, as I don't really use it.
 
 I find the mid layout function:
 ```lua
 layouts["mid"] = function ()
 ```
 
-Then, right before the toggle info button line:
+Then, I replace this line:
 ```lua
 lo = add_layout('tog_info')
 ```
 
-I add the following:
+With:
 ```lua
-    lo = add_layout('ontop')
-    lo.geometry = {x = osc_geo.w - 137, y = refY - 40, an = 5, w = 24, h = 24}
-    lo.style = osc_styles.Ctrl3
-    lo.visible = (osc_param.playresx >= 600)
+lo = add_layout('ontop')
 ```
 
-![image](https://github.com/Samillion/mpv-conf/assets/17427046/71e564f8-6e25-4d48-a51c-433e49b18c76)
+**IMPORTANT:** Make sure it's the correct one relating to the mid layout `layouts["mid"]`.
+
+## Preview
+
+![image](https://github.com/user-attachments/assets/bcd1c7fa-6a5f-4661-bf94-e5c43178d3f6)
+
