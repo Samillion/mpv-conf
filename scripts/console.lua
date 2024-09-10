@@ -17,22 +17,11 @@ local assdraw = require 'mp.assdraw'
 
 -- Default options
 local opts = {
-    -- All drawing is scaled by this value, including the text borders and the
-    -- cursor. Change it if you have a high-DPI display.
-    scale = 1,
-    -- Set the font used for the REPL and the console.
-    -- This has to be a monospaced font.
     font = "",
-    -- Set the font size used for the REPL and the console. This will be
-    -- multiplied by "scale".
     font_size = 16,
     border_size = 1,
     case_sensitive = true,
-    -- Remove duplicate entries in history as to only keep the latest one.
     history_dedup = true,
-    -- The ratio of font height to font width.
-    -- Adjusts table width of completion suggestions.
-    -- Values in the range 1.8..2.5 make sense for common monospace fonts.
     font_hw_ratio = 'auto',
 }
 
@@ -100,6 +89,7 @@ local id = default_id
 local histories = {[id] = {}}
 local history = histories[id]
 local history_pos = 1
+local searching_history = false
 local log_buffers = {[id] = {}}
 local key_bindings = {}
 local global_margins = { t = 0, b = 0 }
@@ -154,8 +144,16 @@ local function truncate_utf8(str, max_length)
     local len = 0
     local pos = 1
     while pos <= #str do
+        local last_pos = pos
         pos = next_utf8(str, pos)
         len = len + 1
+        if pos > last_pos + 1 then
+            if len == max_length - 1 then
+                pos = last_pos
+            else
+                len = len + 1
+            end
+        end
         if len == max_length - 1 then
             return str:sub(1, pos - 1) .. '⋯'
         end
@@ -258,7 +256,6 @@ local function calculate_max_log_lines()
 
     return math.floor(mp.get_property_native('osd-height')
                       / mp.get_property_native('display-hidpi-scale', 1)
-                      / opts.scale
                       * (1 - global_margins.t - global_margins.b)
                       / opts.font_size
                       -- Subtract 1 for the input line and 1 for the newline
@@ -360,9 +357,11 @@ end
 
 local function fuzzy_find(needle, haystacks)
     local result = require 'mp.fzy'.filter(needle, haystacks)
-    table.sort(result, function (i, j)
-        return i[3] > j[3]
-    end)
+    if line ~= '' then -- Prevent table.sort() from reordering the items.
+        table.sort(result, function (i, j)
+            return i[3] > j[3]
+        end)
+    end
     for i, value in ipairs(result) do
         result[i] = value[1]
     end
@@ -437,7 +436,8 @@ local function populate_log_with_matches(max_width)
 
     for i = first_match_to_print, last_match_to_print do
         log[#log + 1] = {
-            text = truncate_utf8(matches[i].text, max_width) .. '\n',
+            text = (max_width and truncate_utf8(matches[i].text, max_width)
+                    or matches[i].text) .. '\n',
             style = i == selected_match and styles.selected_suggestion or '',
             terminal_style = i == selected_match and terminal_styles.selected_suggestion or '',
         }
@@ -500,30 +500,30 @@ local function update()
         return
     end
 
-    local dpi_scale = mp.get_property_native("display-hidpi-scale", 1.0)
-
-    dpi_scale = dpi_scale * opts.scale
+    -- Clear the OSD if the REPL is not active
+    if not repl_active then
+        mp.set_osd_ass(0, 0, '')
+        return
+    end
 
     local screenx, screeny = mp.get_osd_size()
+    local dpi_scale = mp.get_property_native('display-hidpi-scale', 1)
     screenx = screenx / dpi_scale
     screeny = screeny / dpi_scale
 
-    -- Clear the OSD if the REPL is not active
-    if not repl_active then
-        mp.set_osd_ass(screenx, screeny, '')
-        return
-    end
+    local bottom_left_margin = 6
 
     local coordinate_top = math.floor(global_margins.t * screeny + 0.5)
     local clipping_coordinates = '0,' .. coordinate_top .. ',' ..
                                  screenx .. ',' .. screeny
     local ass = assdraw.ass_new()
-    local has_shadow = mp.get_property('osd-back-color'):sub(2, 3) == '00'
+    local has_shadow = mp.get_property('osd-border-style'):find('box$') == nil
     local style = '{\\r' ..
                   '\\1a&H00&\\3a&H00&\\1c&Heeeeee&\\3c&H111111&' ..
                   (has_shadow and '\\4a&H99&\\4c&H000000&' or '') ..
                   '\\fn' .. opts.font .. '\\fs' .. opts.font_size ..
-                  '\\bord' .. opts.border_size .. '\\xshad0\\yshad1\\fsp0\\q1' ..
+                  '\\bord' .. opts.border_size .. '\\xshad0\\yshad1\\fsp0' ..
+                  (selectable_items and '\\q2' or '\\q1') ..
                   '\\clip(' .. clipping_coordinates .. ')}'
     -- Create the cursor glyph as an ASS drawing. ASS will draw the cursor
     -- inline with the surrounding text, but it sets the advance to the width
@@ -546,12 +546,14 @@ local function update()
 
     local lines_max = calculate_max_log_lines()
     -- Estimate how many characters fit in one line
-    local width_max = math.ceil(screenx / opts.font_size * get_font_hw_ratio())
+    local width_max = math.floor((screenx - bottom_left_margin -
+                                  mp.get_property_native('osd-margin-x') * 2 * screeny / 720) /
+                                 opts.font_size * get_font_hw_ratio())
 
     local suggestions, rows = format_table(suggestion_buffer, width_max, lines_max)
     local suggestion_ass = style .. styles.suggestion .. suggestions
 
-    populate_log_with_matches(width_max)
+    populate_log_with_matches()
 
     local log_ass = ''
     local log_buffer = log_buffers[id]
@@ -566,7 +568,7 @@ local function update()
 
     ass:new_event()
     ass:an(1)
-    ass:pos(6, screeny - 6 - global_margins.b * screeny)
+    ass:pos(bottom_left_margin, screeny - bottom_left_margin - global_margins.b * screeny)
     ass:append(log_ass .. '\\N')
     if #suggestions > 0 then
         ass:append(suggestion_ass .. '\\N')
@@ -579,7 +581,7 @@ local function update()
     -- cursor appear in front of the text.
     ass:new_event()
     ass:an(1)
-    ass:pos(6, screeny - 6 - global_margins.b * screeny)
+    ass:pos(bottom_left_margin, screeny - bottom_left_margin - global_margins.b * screeny)
     ass:append(style .. '{\\alpha&HFF&}' .. ass_escape(prompt) .. ' ' .. before_cur)
     ass:append(cglyph)
     ass:append(style .. '{\\alpha&HFF&}' .. after_cur)
@@ -764,6 +766,16 @@ end
 
 -- Run the current command and clear the line (Enter)
 local function handle_enter()
+    if searching_history then
+        searching_history = false
+        selectable_items = nil
+        line = #matches > 0 and matches[selected_match].text or ''
+        cursor = #line + 1
+        log_buffers[id] = {}
+        update()
+        return
+    end
+
     if line == '' and input_caller == nil then
         return
     end
@@ -871,6 +883,28 @@ local function handle_pgdown()
     end
 
     go_history(#history + 1)
+end
+
+local function search_history()
+    if selectable_items or #history == 0 then
+        return
+    end
+
+    searching_history = true
+    selectable_items = {}
+    matches = {}
+    selected_match = 1
+    first_match_to_print = 1
+
+    for i = 1, #history do
+        selectable_items[i] = history[#history + 1 - i]
+    end
+
+    for i, match in ipairs(fuzzy_find(line, selectable_items)) do
+        matches[i] = { index = match, text = selectable_items[match] }
+    end
+
+    update()
 end
 
 local function page_up_or_prev_char()
@@ -1527,6 +1561,7 @@ local function get_bindings()
         { 'end',         go_end                                 },
         { 'pgup',        handle_pgup                            },
         { 'pgdwn',       handle_pgdown                          },
+        { 'ctrl+r',      search_history                         },
         { 'ctrl+c',      clear                                  },
         { 'ctrl+d',      maybe_exit                             },
         { 'ctrl+k',      del_to_eol                             },
@@ -1539,6 +1574,10 @@ local function get_bindings()
         { 'ctrl+del',    del_next_word                          },
         { 'alt+d',       del_next_word                          },
         { 'kp_dec',      function() handle_char_input('.') end  },
+        { 'kp_add',      function() handle_char_input('+') end  },
+        { 'kp_subtract', function() handle_char_input('-') end  },
+        { 'kp_multiply', function() handle_char_input('*') end  },
+        { 'kp_divide',   function() handle_char_input('/') end  },
     }
 
     for i = 0, 9 do
@@ -1577,7 +1616,6 @@ set_active = function (active)
     if active then
         repl_active = true
         insert_mode = false
-        mp.enable_key_bindings('console-input', 'allow-hide-cursor+allow-vo-dragging')
         define_key_bindings()
 
         if not input_caller then
@@ -1587,6 +1625,12 @@ set_active = function (active)
             history_pos = #history + 1
             mp.enable_messages('terminal-default')
         end
+    elseif searching_history then
+        searching_history = false
+        line = ''
+        cursor = 1
+        selectable_items = nil
+        log_buffers[id] = {}
     else
         repl_active = false
         suggestion_buffer = {}
@@ -1750,7 +1794,7 @@ mp.observe_property('display-hidpi-scale', 'native', update)
 mp.observe_property('focused', 'native', update)
 
 mp.observe_property("user-data/osc/margins", "native", function(_, val)
-    if val then
+    if type(val) == "table" and type(val.t) == "number" and type(val.b) == "number" then
         global_margins = val
     else
         global_margins = { t = 0, b = 0 }
