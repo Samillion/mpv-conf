@@ -38,7 +38,8 @@ With:
 lo = add_layout('ontop')
 ```
 
-**IMPORTANT:** Make sure it's the correct one relating to the mid layout `layouts["mid"]`.
+> [!CAUTION]
+> Make sure to modify the correct `Toggle Info` line relating to the mid layout `layouts["mid"]`.
 
 ## Preview
 
