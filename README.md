@@ -21,14 +21,14 @@ Before using, review the files first, to know what's going on.
 > Source links lead to the unmodified scripts on the respective repositories of the original authors.
 
 ## Modification (OSC)
-I modify Modern-F OSC to replace the `Toggle Info` button with the `On Top` button in the `mid` layout, as I don't really use it.
+I modify `Modern-F OSC` to replace the `Toggle Info` button with the `On Top` button in the `mid` layout, as I don't really use that button, I just use the keyboard shortcut.
 
 I find the mid layout function:
 ```lua
 layouts["mid"] = function ()
 ```
 
-Then, I replace this line:
+Then, a bit below, I replace this line:
 ```lua
 lo = add_layout('tog_info')
 ```
@@ -38,8 +38,12 @@ With:
 lo = add_layout('ontop')
 ```
 
+So the result should be:
+![image](https://github.com/user-attachments/assets/e597a061-ba1c-4252-ab14-7a8ee13b30c1)
+
+
 > [!CAUTION]
-> Make sure to modify the correct `Toggle Info` line relating to the mid layout `layouts["mid"]`.
+> Follow the steps above in the exact order to make sure you modify the correct `Toggle Info` line relating to the mid layout, otherwise you might be adjusting the button for another layout and not the mid.
 
 ## Preview
 
