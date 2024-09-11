@@ -13,11 +13,14 @@ Before using, review the files first, to know what's going on.
 - Autoload ([Source](https://github.com/mpv-player/mpv/blob/master/TOOLS/lua/autoload.lua)) [[Config](./script-opts/autoload.conf)]
 - Console ([Source](https://github.com/mpv-player/mpv/blob/master/player/lua/console.lua))
 - Stats ([Source](https://github.com/mpv-player/mpv/blob/master/player/lua/stats.lua))
-- Modern-F OSC ([Source](https://github.com/FinnRaze/mpv-osc-modern-f)) [[Config](./script-opts/modernf.conf)]
+- Modern-F OSC ([Source](https://github.com/FinnRaze/mpv-osc-modern-f)) [[Config](./script-opts/modernf.conf)] [[Modification](#modification-osc)]
 - BoxToWide ([Source](https://github.com/Samillion/mpv-boxtowide))
 - YTDLAutoFormat ([Source](https://github.com/Samillion/mpv-ytdlautoformat))
 
-## Note (OSC)
+> [!NOTE]
+> Source links lead to the unmodified scripts on the respective repositories of the original authors.
+
+## Modification (OSC)
 I modify Modern-F OSC to replace the `Toggle Info` button with the `On Top` button in the `mid` layout, as I don't really use it.
 
 I find the mid layout function:
