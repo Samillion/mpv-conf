@@ -61,18 +61,18 @@ local styles = {
     v = '{\\1c&H99cc99&}',
     warn = '{\\1c&H66ccff&}',
     error = '{\\1c&H7a77f2&}',
-    fatal = '{\\1c&H5791f9&\\b1}',
+    fatal = '{\\1c&H5791f9&}',
     suggestion = '{\\1c&Hcc99cc&}',
     selected_suggestion = '{\\1c&H2fbdfa&\\b1}',
     disabled = '{\\1c&Hcccccc&}',
 }
 
 local terminal_styles = {
-    debug = '\027[1;30m',
+    debug = '\027[90m',
     v = '\027[32m',
     warn = '\027[33m',
     error = '\027[31m',
-    fatal = '\027[1;31m',
+    fatal = '\027[91m',
     selected_suggestion = '\027[7m',
     disabled = '\027[38;5;8m',
 }
@@ -1218,6 +1218,11 @@ local function handle_choice_completion(option, before_cur, path_pos)
 
     if info['expects-file'] then
         return handle_file_completion(before_cur, path_pos)
+    end
+
+    -- Fix completing the empty value for --dscale and --cscale.
+    if info.choices and info.choices[1] == '' and completion_append == '' then
+        info.choices[1] = '""'
     end
 
     return info.choices, before_cur
