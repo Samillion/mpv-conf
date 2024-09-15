@@ -1,8 +1,8 @@
-name: Sync multiple files from various sources
+name: Sync files only if sources are updated
 
 on:
   schedule:
-    - cron: '0 0 2 * *'  
+    - cron: '0 0 2 * *' 
   workflow_dispatch:  # manual trigger
 
 jobs:
@@ -11,40 +11,62 @@ jobs:
 
     steps:
     - name: Checkout your repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4 
 
-    # Sync autoload.lua from mpv-player/mpv
-    - name: Fetch latest autoload.lua
+    # Function to compare and update the file if changed
+    - name: Sync autoload.lua if updated
       run: |
-        curl -o scripts/autoload.lua https://raw.githubusercontent.com/mpv-player/mpv/master/TOOLS/lua/autoload.lua
+        curl -s https://raw.githubusercontent.com/mpv-player/mpv/master/TOOLS/lua/autoload.lua -o /tmp/autoload.lua
+        if ! cmp -s /tmp/autoload.lua scripts/autoload.lua; then
+          mv /tmp/autoload.lua scripts/autoload.lua
+        else
+          echo "autoload.lua is up-to-date, no changes"
+        fi
 
-    # Sync console.lua from mpv-player/mpv
-    - name: Fetch latest console.lua
+    - name: Sync console.lua if updated
       run: |
-        curl -o scripts/console.lua https://raw.githubusercontent.com/mpv-player/mpv/master/player/lua/console.lua
+        curl -s https://raw.githubusercontent.com/mpv-player/mpv/master/player/lua/console.lua -o /tmp/console.lua
+        if ! cmp -s /tmp/console.lua scripts/console.lua; then
+          mv /tmp/console.lua scripts/console.lua
+        else
+          echo "console.lua is up-to-date, no changes"
+        fi
 
-    # Sync stats.lua from mpv-player/mpv
-    - name: Fetch latest stats.lua
+    - name: Sync stats.lua if updated
       run: |
-        curl -o scripts/stats.lua https://raw.githubusercontent.com/mpv-player/mpv/master/player/lua/stats.lua
+        curl -s https://raw.githubusercontent.com/mpv-player/mpv/master/player/lua/stats.lua -o /tmp/stats.lua
+        if ! cmp -s /tmp/stats.lua scripts/stats.lua; then
+          mv /tmp/stats.lua scripts/stats.lua
+        else
+          echo "stats.lua is up-to-date, no changes"
+        fi
 
-    # Sync thumbfast.lua from po5/thumbfast
-    - name: Fetch latest thumbfast.lua
+    - name: Sync thumbfast.lua if updated
       run: |
-        curl -o scripts/thumbfast.lua https://raw.githubusercontent.com/po5/thumbfast/master/thumbfast.lua
+        curl -s https://raw.githubusercontent.com/po5/thumbfast/master/thumbfast.lua -o /tmp/thumbfast.lua
+        if ! cmp -s /tmp/thumbfast.lua scripts/thumbfast.lua; then
+          mv /tmp/thumbfast.lua scripts/thumbfast.lua
+        else
+          echo "thumbfast.lua is up-to-date, no changes"
+        fi
 
-    # Sync modernf.lua from FinnRaze/mpv-osc-modern-f
-    - name: Fetch latest modernf.lua
+    - name: Sync modernf.lua if updated
       run: |
-        curl -o scripts/modernf.lua https://raw.githubusercontent.com/FinnRaze/mpv-osc-modern-f/main/modernf.lua
+        curl -s https://raw.githubusercontent.com/FinnRaze/mpv-osc-modern-f/main/modernf.lua -o /tmp/modernf.lua
+        if ! cmp -s /tmp/modernf.lua scripts/modernf.lua; then
+          mv /tmp/modernf.lua scripts/modernf.lua
+        else
+          echo "modernf.lua is up-to-date, no changes"
+        fi
 
+    # Commit and push only if files have been updated
     - name: Commit and push changes
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "Samillion"
+        git config --local user.name "GitHub Actions"
         if [ -n "$(git status --porcelain)" ]; then
           git add scripts/autoload.lua scripts/console.lua scripts/stats.lua scripts/thumbfast.lua scripts/modernf.lua
-          git commit -m "Sync multiple files from various sources"
+          git commit -m "Sync files from various sources if updated"
           git push
         else
           echo "No changes to commit"
