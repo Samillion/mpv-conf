@@ -14,6 +14,7 @@ Before using, review the files first, to know what's going on.
 - Console ([Source](https://github.com/mpv-player/mpv/blob/master/player/lua/console.lua))
 - Stats ([Source](https://github.com/mpv-player/mpv/blob/master/player/lua/stats.lua))
 - Modern-F OSC ([Source](https://github.com/FinnRaze/mpv-osc-modern-f)) [[Config](./script-opts/modernf.conf)] [[Modification](#modification-osc)]
+- Thumbfast ([Source](https://github.com/po5/thumbfast)) [[Config](./script-opts/thumbfast.conf)]
 - BoxToWide ([Source](https://github.com/Samillion/mpv-boxtowide))
 - YTDLAutoFormat ([Source](https://github.com/Samillion/mpv-ytdlautoformat))
 
@@ -48,5 +49,4 @@ So the result should be:
 
 ## Preview
 
-![image](https://github.com/user-attachments/assets/bcd1c7fa-6a5f-4661-bf94-e5c43178d3f6)
-
+![Preview](https://github.com/user-attachments/assets/a20aa446-4447-4f2c-8a16-49cb5de387d0)
