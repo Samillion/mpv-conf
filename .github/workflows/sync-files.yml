@@ -11,7 +11,7 @@ jobs:
 
     steps:
     - name: Checkout your repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     # Sync autoload.lua from mpv-player/mpv
     - name: Fetch latest autoload.lua
