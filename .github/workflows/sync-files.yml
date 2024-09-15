@@ -1,0 +1,53 @@
+name: Sync multiple files from various sources
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Runs daily at midnight UTC
+  workflow_dispatch:  # Allows manual trigger
+
+jobs:
+  sync_files:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout your repository
+      uses: actions/checkout@v3
+
+    # Sync autoload.lua from mpv-player/mpv
+    - name: Fetch latest autoload.lua
+      run: |
+        curl -o scripts/autoload.lua https://raw.githubusercontent.com/mpv-player/mpv/master/TOOLS/lua/autoload.lua
+
+    # Sync console.lua from mpv-player/mpv
+    - name: Fetch latest console.lua
+      run: |
+        curl -o scripts/console.lua https://raw.githubusercontent.com/mpv-player/mpv/master/player/lua/console.lua
+
+    # Sync stats.lua from mpv-player/mpv
+    - name: Fetch latest stats.lua
+      run: |
+        curl -o scripts/stats.lua https://raw.githubusercontent.com/mpv-player/mpv/master/player/lua/stats.lua
+
+    # Sync thumbfast.lua from po5/thumbfast
+    - name: Fetch latest thumbfast.lua
+      run: |
+        curl -o scripts/thumbfast.lua https://raw.githubusercontent.com/po5/thumbfast/master/thumbfast.lua
+
+    # Sync modernf.lua from FinnRaze/mpv-osc-modern-f
+    - name: Fetch latest modernf.lua
+      run: |
+        curl -o scripts/modernf.lua https://raw.githubusercontent.com/FinnRaze/mpv-osc-modern-f/main/modernf.lua
+
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "Samillion"
+        if [ -n "$(git status --porcelain)" ]; then
+          git add scripts/autoload.lua scripts/console.lua scripts/stats.lua scripts/thumbfast.lua scripts/modernf.lua
+          git commit -m "Sync multiple files from various sources"
+          git push
+        else
+          echo "No changes to commit"
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
