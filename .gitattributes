@@ -1,4 +1,6 @@
+# https://github.com/dyphire/mpv-config/blob/master/.gitattributes
 *.conf      linguist-language=INI
+*.hook      linguist-language=GLSL
 *.conf      text eol=lf
 *.lua       text eol=lf
 *.glsl      text eol=lf
