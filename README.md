@@ -3,10 +3,10 @@ My personal mpv configuration. It's not unique and it is minimum. It works well 
 
 For example:
 - All default keybinds are disabled, only very few are set in `input.conf`
-- MKV Chapters is disabled `no-ordered-chapters`
-- Hardware decoding disabled `hwdec=no`, unless 2k+
-- Profile is set to Fast mode `profile=fast` by default
-- Huge cache by default (~1.5GB)
+- MKV Chapters option is disabled `no-ordered-chapters`
+- Hardware decoding disabled `hwdec=no`, unless videos are 2k+
+- Profile is set to fast mode `profile=fast` by default
+- Huge cache by default (~1.5GB+~400MiB)
 
 Before using, review the files first, to know what's going on.
 
@@ -16,8 +16,10 @@ Before using, review the files first, to know what's going on.
 - Stats ([Source](https://github.com/mpv-player/mpv/blob/master/player/lua/stats.lua))
 - ModernX OSC ([Source](https://github.com/zydezu/ModernX)) [[Config](./script-opts/modernx.conf)]
 - Thumbfast ([Source](https://github.com/po5/thumbfast)) [[Config](./script-opts/thumbfast.conf)]
-- BoxToWide ([Source](https://github.com/Samillion/mpv-boxtowide))
-- YTDLAutoFormat ([Source](https://github.com/Samillion/mpv-ytdlautoformat))
+- BoxToWide ([Source](https://github.com/Samillion/mpv-boxtowide)) [^1]
+- YTDLAutoFormat ([Source](https://github.com/Samillion/mpv-ytdlautoformat)) [^1]
+
+[^1]: Disclosure: Both `BoxToWide` and `YTDLAutoFormat` are scripts written and maintained by me.
 
 > [!NOTE]
 > Source links lead to the unmodified scripts on the respective repositories of the original authors.
