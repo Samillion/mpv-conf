@@ -1,11 +1,12 @@
 # mpv-conf
-My personal mpv configuration. It's not unique, it is minimum and with many features disabled or set to its low setting. It works well for my use case, so if you're after crisp 4k upscaling and such, this isn't the configuration for you.
+My personal mpv configuration. It's not unique and it is minimum. It works well for my use case, so if you're after crisp 4k upscaling and such, this isn't the configuration for you.
 
 For example:
 - All default keybinds are disabled, only very few are set in `input.conf`
 - MKV Chapters is disabled `no-ordered-chapters`
-- Hardware decoding disabled `hwdec=no`
-- Profile is set to Fast mode `profile=fast`
+- Hardware decoding disabled `hwdec=no`, unless 2k+
+- Profile is set to Fast mode `profile=fast` by default
+- Huge cache by default (~1.5GB)
 
 Before using, review the files first, to know what's going on.
 
@@ -13,7 +14,7 @@ Before using, review the files first, to know what's going on.
 - Autoload ([Source](https://github.com/mpv-player/mpv/blob/master/TOOLS/lua/autoload.lua)) [[Config](./script-opts/autoload.conf)]
 - Console ([Source](https://github.com/mpv-player/mpv/blob/master/player/lua/console.lua))
 - Stats ([Source](https://github.com/mpv-player/mpv/blob/master/player/lua/stats.lua))
-- Modern-F OSC ([Source](https://github.com/FinnRaze/mpv-osc-modern-f)) [[Config](./script-opts/modernf.conf)] [[Modification](#modification-osc)]
+- ModernX OSC ([Source](https://github.com/zydezu/ModernX)) [[Config](./script-opts/modernx.conf)]
 - Thumbfast ([Source](https://github.com/po5/thumbfast)) [[Config](./script-opts/thumbfast.conf)]
 - BoxToWide ([Source](https://github.com/Samillion/mpv-boxtowide))
 - YTDLAutoFormat ([Source](https://github.com/Samillion/mpv-ytdlautoformat))
@@ -21,32 +22,6 @@ Before using, review the files first, to know what's going on.
 > [!NOTE]
 > Source links lead to the unmodified scripts on the respective repositories of the original authors.
 
-## Modification (OSC)
-I modify `Modern-F OSC` to replace the `Toggle Info` button with the `On Top` button in the `mid` layout, as I don't really use that button, I just use the keyboard shortcut.
-
-I find the mid layout function:
-```lua
-layouts["mid"] = function ()
-```
-
-Then, a bit below, I replace this line:
-```lua
-lo = add_layout('tog_info')
-```
-
-With:
-```lua
-lo = add_layout('ontop')
-```
-
-So the result should be:
-
-![image](https://github.com/user-attachments/assets/e597a061-ba1c-4252-ab14-7a8ee13b30c1)
-
-
-> [!CAUTION]
-> Follow the steps above in the exact order to make sure you modify the correct `Toggle Info` line relating to the mid layout, otherwise you might be adjusting the button for another layout and not the mid.
-
 ## Preview
 
-![Preview](https://github.com/user-attachments/assets/a20aa446-4447-4f2c-8a16-49cb5de387d0)
+![image](https://github.com/user-attachments/assets/ffe8c35e-7f59-44b8-8125-63b0eb56241f)
