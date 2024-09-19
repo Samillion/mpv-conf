@@ -1,4 +1,4 @@
-*.conf      linguist-language=Properties
+*.conf      linguist-language=INI
 *.conf      text eol=lf
 *.lua       text eol=lf
 *.glsl      text eol=lf
