@@ -1,0 +1,5 @@
+*.conf      linguist-language=Properties
+*.conf      text eol=lf
+*.lua       text eol=lf
+*.glsl      text eol=lf
+*.md        text eol=lf
