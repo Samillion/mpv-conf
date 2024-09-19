@@ -50,13 +50,13 @@ jobs:
           echo "thumbfast.lua is up-to-date, no changes"
         fi
 
-    - name: Sync modernf.lua if updated
+    - name: Sync modernx.lua if updated
       run: |
-        curl -s https://raw.githubusercontent.com/FinnRaze/mpv-osc-modern-f/main/modernf.lua -o /tmp/modernf.lua
-        if ! cmp -s /tmp/modernf.lua scripts/modernf.lua; then
-          mv /tmp/modernf.lua scripts/modernf.lua
+        curl -s https://raw.githubusercontent.com/zydezu/ModernX/main/modernx.lua -o /tmp/modernx.lua
+        if ! cmp -s /tmp/modernx.lua scripts/modernx.lua; then
+          mv /tmp/modernx.lua scripts/modernx.lua
         else
-          echo "modernf.lua is up-to-date, no changes"
+          echo "modernx.lua is up-to-date, no changes"
         fi
 
     # Commit and push only if files have been updated
