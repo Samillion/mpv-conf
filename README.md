@@ -6,7 +6,7 @@ For example:
 - MKV Chapters option is disabled `no-ordered-chapters`
 - Hardware decoding disabled `hwdec=no`, unless videos are 2k+
 - Profile is set to fast mode `profile=fast` by default
-- Huge cache by default (~1.5GB+~400MiB)
+- Huge cache by default (~1.5GB + ~400MiB)
 
 Before using, review the files first, to know what's going on.
 
@@ -30,4 +30,4 @@ Before using, review the files first, to know what's going on.
 
 ## Preview
 
-![image](https://github.com/user-attachments/assets/ffe8c35e-7f59-44b8-8125-63b0eb56241f)
+![Preview](https://github.com/user-attachments/assets/0f4bfcef-8ff0-4c99-8976-8e845940d27d)
