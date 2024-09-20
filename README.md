@@ -24,6 +24,10 @@ Before using, review the files first, to know what's going on.
 > [!NOTE]
 > Source links lead to the unmodified scripts on the respective repositories of the original authors.
 
+## Configuration
+- Main [[mpv.conf](./mpv.conf)]
+- Input [[input.conf](./input.conf)]
+
 ## Preview
 
 ![image](https://github.com/user-attachments/assets/ffe8c35e-7f59-44b8-8125-63b0eb56241f)
