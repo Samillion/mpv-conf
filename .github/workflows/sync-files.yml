@@ -14,13 +14,13 @@ jobs:
       uses: actions/checkout@v4 
 
     # Function to compare and update the file if changed
-    - name: Sync autoload.lua if updated
+    - name: Sync select.lua if updated
       run: |
-        curl -s https://raw.githubusercontent.com/mpv-player/mpv/master/TOOLS/lua/autoload.lua -o /tmp/autoload.lua
-        if ! cmp -s /tmp/autoload.lua scripts/autoload.lua; then
-          mv /tmp/autoload.lua scripts/autoload.lua
+        curl -s https://raw.githubusercontent.com/mpv-player/mpv/refs/heads/master/player/lua/select.lua -o /tmp/select.lua
+        if ! cmp -s /tmp/select.lua scripts/select.lua; then
+          mv /tmp/select.lua scripts/select.lua
         else
-          echo "autoload.lua is up-to-date, no changes"
+          echo "select.lua is up-to-date, no changes"
         fi
 
     - name: Sync console.lua if updated
