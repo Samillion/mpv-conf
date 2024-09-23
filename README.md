@@ -1,28 +1,31 @@
 # mpv-conf
-My personal mpv configuration. It's not unique and it is minimum. It works well for my use case, so if you're after crisp 4k upscaling and such, this isn't the configuration for you.
+My personal mpv configuration. It's not unique and it is minimum. It works well for my use case, which is usually a simple one that doesn't involve upscaling. Though I have an `auto-profile` for 2K+ videos included in my `mpv.conf`.
 
 For example:
 - All default keybinds are disabled, only very few are set in `input.conf`
-- MKV Chapters option is disabled `no-ordered-chapters`
-- Hardware decoding disabled `hwdec=no`, unless videos are 2k+
+- Chapters option is disabled `ordered-chapters=no`
+- Hardware decoding is disabled `hwdec=no`
 - Profile is set to fast mode `profile=fast` by default
-- Huge cache by default (~1.5GB + ~400MiB)
+- Huge cache by default `~1.5GB + ~400MiB`
 
-Before using, review the files first, to know what's going on.
+Before using, review the files first to know what's being used.
+
+> [!IMPORTANT]
+> My configuration works with `mpv v0.39.0` and higher due to the use of things like `autocreate-playlist` that were introduced starting that version, which replaces `autoload.lua` script as a native feature.
 
 ## Scripts
-- Autoload ([Source](https://github.com/mpv-player/mpv/blob/master/TOOLS/lua/autoload.lua)) [[Config](./script-opts/autoload.conf)]
 - Console ([Source](https://github.com/mpv-player/mpv/blob/master/player/lua/console.lua))
-- Stats ([Source](https://github.com/mpv-player/mpv/blob/master/player/lua/stats.lua))
-- ModernX OSC ([Source](https://github.com/zydezu/ModernX)) [[Config](./script-opts/modernx.conf)]
-- Thumbfast ([Source](https://github.com/po5/thumbfast)) [[Config](./script-opts/thumbfast.conf)]
 - BoxToWide ([Source](https://github.com/Samillion/mpv-boxtowide)) [^1]
+- ModernX OSC ([Source](https://github.com/zydezu/ModernX)) [[Config](./script-opts/modernx.conf)]
+- Select ([Source](https://github.com/mpv-player/mpv/blob/master/player/lua/select.lua))
+- Stats ([Source](https://github.com/mpv-player/mpv/blob/master/player/lua/stats.lua))
+- Thumbfast ([Source](https://github.com/po5/thumbfast)) [[Config](./script-opts/thumbfast.conf)]
 - YTDLAutoFormat ([Source](https://github.com/Samillion/mpv-ytdlautoformat)) [^1]
 
 [^1]: Disclosure: Both `BoxToWide` and `YTDLAutoFormat` are scripts written and maintained by me.
 
 > [!NOTE]
-> Source links lead to the unmodified scripts on the respective repositories of the original authors.
+> Source links lead to the respective repositories of the original authors.
 
 ## Configuration
 - Main [[mpv.conf](./mpv.conf)]
