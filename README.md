@@ -1,12 +1,12 @@
 # mpv-conf
-My personal mpv configuration. It's not unique and it is minimum. It works well for my use case, which is usually a simple one that doesn't involve upscaling. Though I have an `auto-profile` for 2K+ videos included in my `mpv.conf`.
+My personal mpv configuration. It is minimum and works well for my use case, which is usually a simple one that doesn't involve upscaling. Though I have an `auto-profile` for 2K+ videos included in my `mpv.conf`.
 
 For example:
-- All default keybinds are disabled, only very few are set in `input.conf`
-- Chapters option is disabled `ordered-chapters=no`
+- Huge cache `~1.5GB + ~400MiB`
+- Profile is set to fast mode `profile=fast`
 - Hardware decoding is disabled `hwdec=no`
-- Profile is set to fast mode `profile=fast` by default
-- Huge cache by default `~1.5GB + ~400MiB`
+- All keybinds are disabled, only few are set in `input.conf`
+- Matroska ordered chapters is disabled `ordered-chapters=no`
 
 Before using, review the files first to know what's being used.
 
@@ -28,8 +28,8 @@ Before using, review the files first to know what's being used.
 > Source links lead to the respective repositories of the original authors.
 
 ## Configuration
-- Main [[mpv.conf](./mpv.conf)]
-- Input [[input.conf](./input.conf)]
+- Main configuration [[mpv.conf](./mpv.conf)]
+- Input key bindings [[input.conf](./input.conf)]
 
 ## Preview
 
