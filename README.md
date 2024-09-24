@@ -1,7 +1,7 @@
 # mpv-conf
 My personal mpv configuration. It is minimum and works well for my use case, which is usually a simple one that doesn't involve upscaling. Though I have an `auto-profile` for 2K+ videos included in my `mpv.conf`.
 
-For example:
+Noteworthy details:
 - Huge cache `~1.5GB + ~400MiB`
 - Profile is set to fast mode `profile=fast`
 - Hardware decoding is disabled `hwdec=no`
@@ -33,4 +33,5 @@ Before using, review the files first to know what's being used.
 
 ## Preview
 
-![Preview](https://github.com/user-attachments/assets/0f4bfcef-8ff0-4c99-8976-8e845940d27d)
+![mpv-preview](https://github.com/user-attachments/assets/41ac707c-c891-4208-8bbf-1e8ab756af06)
+
