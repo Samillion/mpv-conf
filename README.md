@@ -59,11 +59,7 @@ conf/mpv
 ```
 
 > [!NOTE]
-> On Windows, if you create a folder named `portable_config` in the same place as `mpv.exe`, all configuration will be loaded from there instead of the location mentioned above.
->
-> This is meant for convenience. Though do note to not use in a place like `C:\Program Files\` or any directory that would require admin privelege to write. (ie: for save watch state configs, in the same directory)
->
-> More information about this can be found [here](https://mpv.io/manual/master/#files-on-windows)
+> More information about files locations can be found  [here](https://mpv.io/manual/master/#files)
 
 ## Preview
 
