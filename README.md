@@ -3,7 +3,6 @@ My personal mpv configuration. It is minimum and works well for my use case, whi
 
 Noteworthy details:
 - Huge cache `~1.5GB + ~400MiB`
-- Profile is set to fast mode `profile=fast`
 - Hardware decoding is disabled `hwdec=no`
 - All keybinds are disabled, only few are set in `input.conf`
 - Matroska ordered chapters is disabled `ordered-chapters=no`
