@@ -19,13 +19,14 @@ Before using, review the files first to know what's being used.
 ## Scripts
 - Console ([Source](https://github.com/mpv-player/mpv/blob/master/player/lua/console.lua))
 - BoxToWide ([Source](https://github.com/Samillion/mpv-boxtowide)) [^1]
-- ModernX OSC ([Source](https://github.com/zydezu/ModernX)) [[Config](./script-opts/modernx.conf)]
+- ModernX-Lite OSC ([Source](https://github.com/Samillion/ModernX-Lite)) [^2]
 - Select ([Source](https://github.com/mpv-player/mpv/blob/master/player/lua/select.lua))
 - Stats ([Source](https://github.com/mpv-player/mpv/blob/master/player/lua/stats.lua))
 - Thumbfast ([Source](https://github.com/po5/thumbfast)) [[Config](./script-opts/thumbfast.conf)]
 - YTDLAutoFormat ([Source](https://github.com/Samillion/mpv-ytdlautoformat)) [^1]
 
 [^1]: Disclosure: Both `BoxToWide` and `YTDLAutoFormat` are scripts written and maintained by me.
+[^2]: ModernX-Lite OSC is a fork maintained by me.
 
 > [!NOTE]
 > Source links lead to the respective repositories of the original authors.
@@ -45,13 +46,13 @@ conf/mpv
 │       Material-Design-Iconic-Round.ttf
 │
 ├───script-opts
-│       modernx.conf
+│       modernxlite.conf
 │       thumbfast.conf
 │
 └───scripts
         boxtowide.lua
         console.lua
-        modernx.lua
+        modernxlite.lua
         select.lua
         stats.lua
         thumbfast.lua
