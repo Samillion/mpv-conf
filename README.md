@@ -64,5 +64,5 @@ conf/mpv
 
 ## Preview
 
-![mpv-preview](https://github.com/user-attachments/assets/41ac707c-c891-4208-8bbf-1e8ab756af06)
+![Preview](https://github.com/user-attachments/assets/f43d4c34-2746-40f8-9068-3cbea538a0bd)
 
