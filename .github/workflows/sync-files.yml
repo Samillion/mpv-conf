@@ -78,6 +78,11 @@ jobs:
           echo "thumbfast.lua is up-to-date, no changes"
         fi
 
+    - name: Debug updated files
+      run: |
+        echo "Updated files:"
+        cat /tmp/updated_files.txt || echo "No files were updated"
+
     # Commit and push only if files from /tmp/updated_files.txt have been updated
     - name: Commit and push changes
       run: |
@@ -87,8 +92,8 @@ jobs:
         # Check if there are any files that were updated
         if [ -s /tmp/updated_files.txt ]; then
           # Stage only the files that were updated
-          cat /tmp/updated_files.txt | xargs git add
-          
+          cat /tmp/updated_files.txt | xargs git add --ignore-missing
+
           # Check if there are any staged changes for commit
           if [ -n "$(git status --porcelain)" ]; then
             git commit -m "Sync files from various sources if updated"
