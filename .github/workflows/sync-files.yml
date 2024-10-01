@@ -13,6 +13,10 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4 
 
+    # hold the list of updated files
+    - name: Initialize updated files list
+      run: echo "" > /tmp/updated_files.txt
+
     # compare and update the file if changed, with error checking for curl
     - name: Sync sponsorblock_minimal.lua if updated
       run: |
@@ -21,6 +25,7 @@ jobs:
           echo "Failed to download sponsorblock_minimal.lua (HTTP code $(cat /tmp/curl_code))"
         elif ! cmp -s /tmp/sponsorblock_minimal.lua scripts/sponsorblock_minimal.lua; then
           mv /tmp/sponsorblock_minimal.lua scripts/sponsorblock_minimal.lua
+          echo "scripts/sponsorblock_minimal.lua" >> /tmp/updated_files.txt
         else
           echo "sponsorblock_minimal.lua is up-to-date, no changes"
         fi
@@ -32,6 +37,7 @@ jobs:
           echo "Failed to download select.lua (HTTP code $(cat /tmp/curl_code))"
         elif ! cmp -s /tmp/select.lua scripts/select.lua; then
           mv /tmp/select.lua scripts/select.lua
+          echo "scripts/select.lua" >> /tmp/updated_files.txt
         else
           echo "select.lua is up-to-date, no changes"
         fi
@@ -43,6 +49,7 @@ jobs:
           echo "Failed to download console.lua (HTTP code $(cat /tmp/curl_code))"
         elif ! cmp -s /tmp/console.lua scripts/console.lua; then
           mv /tmp/console.lua scripts/console.lua
+          echo "scripts/console.lua" >> /tmp/updated_files.txt
         else
           echo "console.lua is up-to-date, no changes"
         fi
@@ -54,6 +61,7 @@ jobs:
           echo "Failed to download stats.lua (HTTP code $(cat /tmp/curl_code))"
         elif ! cmp -s /tmp/stats.lua scripts/stats.lua; then
           mv /tmp/stats.lua scripts/stats.lua
+          echo "scripts/stats.lua" >> /tmp/updated_files.txt
         else
           echo "stats.lua is up-to-date, no changes"
         fi
@@ -65,21 +73,31 @@ jobs:
           echo "Failed to download thumbfast.lua (HTTP code $(cat /tmp/curl_code))"
         elif ! cmp -s /tmp/thumbfast.lua scripts/thumbfast.lua; then
           mv /tmp/thumbfast.lua scripts/thumbfast.lua
+          echo "scripts/thumbfast.lua" >> /tmp/updated_files.txt
         else
           echo "thumbfast.lua is up-to-date, no changes"
         fi
 
-    # Commit and push only if files have been updated
+    # Commit and push only if files from /tmp/updated_files.txt have been updated
     - name: Commit and push changes
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "GitHub Actions"
-        if [ -n "$(git status --porcelain)" ]; then
-          git add scripts/sponsorblock_minimal.lua scripts/select.lua scripts/console.lua scripts/stats.lua scripts/thumbfast.lua
-          git commit -m "Sync files from various sources if updated"
-          git push
+        
+        # Check if there are any files that were updated
+        if [ -s /tmp/updated_files.txt ]; then
+          # Stage only the files that were updated
+          cat /tmp/updated_files.txt | xargs git add
+          
+          # Check if there are any staged changes for commit
+          if [ -n "$(git status --porcelain)" ]; then
+            git commit -m "Sync files from various sources if updated"
+            git push
+          else
+            echo "No changes to commit after staging"
+          fi
         else
-          echo "No changes to commit"
+          echo "No files were updated"
         fi
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
