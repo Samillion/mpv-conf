@@ -2,7 +2,7 @@ name: Sync files only if sources are updated
 
 on:
   schedule:
-    - cron: '0 0 2 * *' 
+    - cron: '0 0 2 * *'
   workflow_dispatch:  # manual trigger
 
 jobs:
@@ -13,11 +13,13 @@ jobs:
     - name: Checkout your repository
       uses: actions/checkout@v4 
 
-    # Function to compare and update the file if changed
+    # compare and update the file if changed, with error checking for curl
     - name: Sync select.lua if updated
       run: |
-        curl -s https://raw.githubusercontent.com/mpv-player/mpv/refs/heads/master/player/lua/select.lua -o /tmp/select.lua
-        if ! cmp -s /tmp/select.lua scripts/select.lua; then
+        curl -s -w "%{http_code}" -o /tmp/select.lua https://raw.githubusercontent.com/mpv-player/mpv/refs/heads/master/player/lua/select.lua | tee /tmp/curl_code
+        if [ $(cat /tmp/curl_code) -ne 200 ]; then
+          echo "Failed to download select.lua (HTTP code $(cat /tmp/curl_code))"
+        elif ! cmp -s /tmp/select.lua scripts/select.lua; then
           mv /tmp/select.lua scripts/select.lua
         else
           echo "select.lua is up-to-date, no changes"
@@ -25,8 +27,10 @@ jobs:
 
     - name: Sync console.lua if updated
       run: |
-        curl -s https://raw.githubusercontent.com/mpv-player/mpv/master/player/lua/console.lua -o /tmp/console.lua
-        if ! cmp -s /tmp/console.lua scripts/console.lua; then
+        curl -s -w "%{http_code}" -o /tmp/console.lua https://raw.githubusercontent.com/mpv-player/mpv/master/player/lua/console.lua | tee /tmp/curl_code
+        if [ $(cat /tmp/curl_code) -ne 200 ]; then
+          echo "Failed to download console.lua (HTTP code $(cat /tmp/curl_code))"
+        elif ! cmp -s /tmp/console.lua scripts/console.lua; then
           mv /tmp/console.lua scripts/console.lua
         else
           echo "console.lua is up-to-date, no changes"
@@ -34,8 +38,10 @@ jobs:
 
     - name: Sync stats.lua if updated
       run: |
-        curl -s https://raw.githubusercontent.com/mpv-player/mpv/master/player/lua/stats.lua -o /tmp/stats.lua
-        if ! cmp -s /tmp/stats.lua scripts/stats.lua; then
+        curl -s -w "%{http_code}" -o /tmp/stats.lua https://raw.githubusercontent.com/mpv-player/mpv/master/player/lua/stats.lua | tee /tmp/curl_code
+        if [ $(cat /tmp/curl_code) -ne 200 ]; then
+          echo "Failed to download stats.lua (HTTP code $(cat /tmp/curl_code))"
+        elif ! cmp -s /tmp/stats.lua scripts/stats.lua; then
           mv /tmp/stats.lua scripts/stats.lua
         else
           echo "stats.lua is up-to-date, no changes"
@@ -43,20 +49,24 @@ jobs:
 
     - name: Sync thumbfast.lua if updated
       run: |
-        curl -s https://raw.githubusercontent.com/po5/thumbfast/master/thumbfast.lua -o /tmp/thumbfast.lua
-        if ! cmp -s /tmp/thumbfast.lua scripts/thumbfast.lua; then
+        curl -s -w "%{http_code}" -o /tmp/thumbfast.lua https://raw.githubusercontent.com/po5/thumbfast/master/thumbfast.lua | tee /tmp/curl_code
+        if [ $(cat /tmp/curl_code) -ne 200 ]; then
+          echo "Failed to download thumbfast.lua (HTTP code $(cat /tmp/curl_code))"
+        elif ! cmp -s /tmp/thumbfast.lua scripts/thumbfast.lua; then
           mv /tmp/thumbfast.lua scripts/thumbfast.lua
         else
           echo "thumbfast.lua is up-to-date, no changes"
         fi
 
-    - name: Sync modernx.lua if updated
+    - name: Sync sponsorblock_minimal.lua if updated
       run: |
-        curl -s https://raw.githubusercontent.com/zydezu/ModernX/main/modernx.lua -o /tmp/modernx.lua
-        if ! cmp -s /tmp/modernx.lua scripts/modernx.lua; then
-          mv /tmp/modernx.lua scripts/modernx.lua
+        curl -s -w "%{http_code}" -o /tmp/sponsorblock_minimal.lua https://codeberg.org/jouni/mpv_sponsorblock_minimal/raw/branch/master/sponsorblock_minimal.lua | tee /tmp/curl_code
+        if [ $(cat /tmp/curl_code) -ne 200 ]; then
+          echo "Failed to download sponsorblock_minimal.lua (HTTP code $(cat /tmp/curl_code))"
+        elif ! cmp -s /tmp/sponsorblock_minimal.lua scripts/sponsorblock_minimal.lua; then
+          mv /tmp/sponsorblock_minimal.lua scripts/sponsorblock_minimal.lua
         else
-          echo "modernx.lua is up-to-date, no changes"
+          echo "sponsorblock_minimal.lua is up-to-date, no changes"
         fi
 
     # Commit and push only if files have been updated
