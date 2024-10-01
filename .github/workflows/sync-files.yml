@@ -88,11 +88,20 @@ jobs:
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "GitHub Actions"
-        
-        # Check if there are any files that were updated
+
+        # Remove empty lines from the updated_files.txt
+        sed -i '/^$/d' /tmp/updated_files.txt
+
+        # Check if /tmp/updated_files.txt exists and is non-empty
         if [ -s /tmp/updated_files.txt ]; then
-          # Stage only the files that were updated
-          cat /tmp/updated_files.txt | xargs git add --ignore-missing
+          # Iterate over each file in /tmp/updated_files.txt and add only if it exists
+          while IFS= read -r file; do
+            if [ -f "$file" ]; then
+              git add "$file"
+            else
+              echo "File $file not found, skipping."
+            fi
+          done < /tmp/updated_files.txt
 
           # Check if there are any staged changes for commit
           if [ -n "$(git status --porcelain)" ]; then
@@ -103,6 +112,7 @@ jobs:
           fi
         else
           echo "No files were updated"
+          rm -f /tmp/updated_files.txt  # Remove the file if it's empty or not needed
         fi
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
