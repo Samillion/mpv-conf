@@ -78,6 +78,7 @@ local terminal_styles = {
 }
 
 local repl_active = false
+local osd_msg_active = false
 local insert_mode = false
 local pending_update = false
 local line = ''
@@ -247,7 +248,8 @@ local function ass_escape(str)
 end
 
 local function calculate_max_log_lines()
-    if not mp.get_property_native('vo-configured') then
+    if not mp.get_property_native('vo-configured')
+       or not mp.get_property_native('video-osd') then
         -- Subtract 1 for the input line and for each line in the status line.
         -- This does not detect wrapped lines.
         return mp.get_property_native('term-size/h', 24) - 2 -
@@ -368,6 +370,21 @@ local function fuzzy_find(needle, haystacks)
     return result
 end
 
+local function calculate_max_terminal_width()
+    local max_width = mp.get_property_native('term-size/w', 80)
+
+    -- The longest module name is vo/gpu-next/libplacebo.
+    if mp.get_property_native('msg-module') then
+        max_width = max_width - 24
+    end
+
+    if mp.get_property_native('msg-time') then
+        max_width = max_width - 13
+    end
+
+    return max_width
+end
+
 local function populate_log_with_matches(max_width)
     if not selectable_items or selected_match == 0 then
         return
@@ -428,7 +445,7 @@ local function populate_log_with_matches(max_width)
 
     if first_match_to_print > 1 then
         log[1] = {
-            text = '↑ (' .. (first_match_to_print - 1) .. ' hidden items)' .. '\n',
+            text = '↑ (' .. (first_match_to_print - 1) .. ' hidden items)',
             style = styles.disabled,
             terminal_style = terminal_styles.disabled,
         }
@@ -437,7 +454,7 @@ local function populate_log_with_matches(max_width)
     for i = first_match_to_print, last_match_to_print do
         log[#log + 1] = {
             text = (max_width and truncate_utf8(matches[i].text, max_width)
-                    or matches[i].text) .. '\n',
+                    or matches[i].text),
             style = i == selected_match and styles.selected_suggestion or '',
             terminal_style = i == selected_match and terminal_styles.selected_suggestion or '',
         }
@@ -445,7 +462,7 @@ local function populate_log_with_matches(max_width)
 
     if last_match_to_print < #matches then
         log[#log + 1] = {
-            text = '↓ (' .. (#matches - last_match_to_print) .. ' hidden items)' .. '\n',
+            text = '↓ (' .. (#matches - last_match_to_print) .. ' hidden items)',
             style = styles.disabled,
             terminal_style = terminal_styles.disabled,
         }
@@ -456,14 +473,15 @@ local function print_to_terminal()
     -- Clear the log after closing the console.
     if not repl_active then
         mp.osd_message('')
+        osd_msg_active = false
         return
     end
 
-    populate_log_with_matches(mp.get_property_native('term-size/w', 80))
+    populate_log_with_matches(calculate_max_terminal_width())
 
     local log = ''
     for _, log_line in ipairs(log_buffers[id]) do
-        log = log .. log_line.terminal_style .. log_line.text .. '\027[0m'
+        log = log .. log_line.terminal_style .. log_line.text .. '\027[0m\n'
     end
 
     local suggestions = ''
@@ -487,6 +505,7 @@ local function print_to_terminal()
     mp.osd_message(log .. suggestions .. prompt .. ' ' .. before_cur ..
                   '\027[7m' .. after_cur:sub(1, 1) .. '\027[0m' ..
                    after_cur:sub(2), 999)
+    osd_msg_active = true
 end
 
 -- Render the REPL and console as an ASS OSD
@@ -495,9 +514,15 @@ local function update()
 
     -- Unlike vo-configured, current-vo doesn't become falsy while switching VO,
     -- which would print the log to the OSD.
-    if not mp.get_property('current-vo') then
+    if not mp.get_property('current-vo') or not mp.get_property_native('video-osd') then
         print_to_terminal()
         return
+    end
+
+    -- Clear the OSD if the console was being printed to the terminal
+    if osd_msg_active then
+        mp.osd_message('')
+        osd_msg_active = false
     end
 
     -- Clear the OSD if the REPL is not active
@@ -563,7 +588,8 @@ local function update()
         log_messages = log_max_lines
     end
     for i = #log_buffer - log_messages + 1, #log_buffer do
-        log_ass = log_ass .. style .. log_buffer[i].style .. ass_escape(log_buffer[i].text)
+        log_ass = log_ass .. style .. log_buffer[i].style ..
+                  ass_escape(log_buffer[i].text) .. '\\N'
     end
 
     ass:new_event()
@@ -745,7 +771,7 @@ local function help_command(param)
             end
         end
         if not cmd then
-            log_add('No command matches "' .. param .. '"!\n', styles.error,
+            log_add('No command matches "' .. param .. '"!', styles.error,
                     terminal_styles.error)
             return
         end
@@ -761,7 +787,7 @@ local function help_command(param)
             output = output .. 'This command supports variable arguments.\n'
         end
     end
-    log_add(output)
+    log_add(output:sub(1, -2))
 end
 
 -- Run the current command and clear the line (Enter)
@@ -1738,7 +1764,7 @@ mp.register_script_message('log', function (message)
 
     message = utils.parse_json(message)
 
-    log_add(message.text .. '\n',
+    log_add(message.text,
             message.error and styles.error or message.style,
             message.error and terminal_styles.error or message.terminal_style)
 end)
@@ -1753,13 +1779,13 @@ mp.register_script_message('set-log', function (log)
 
     for i = 1, #log do
         if type(log[i]) == 'table' then
-            log[i].text = log[i].text .. '\n'
+            log[i].text = log[i].text
             log[i].style = log[i].style or ''
             log[i].terminal_style = log[i].terminal_style or ''
             log_buffers[id][i] = log[i]
         else
             log_buffers[id][i] = {
-                text = log[i] .. '\n',
+                text = log[i],
                 style = '',
                 terminal_style = '',
             }
@@ -1830,7 +1856,7 @@ mp.register_event('log-message', function(e)
     if e.level == 'trace' then return end
 
     -- Use color for debug/v/warn/error/fatal messages.
-    log_add('[' .. e.prefix .. '] ' .. e.text, styles[e.level],
+    log_add('[' .. e.prefix .. '] ' .. e.text:sub(1, -2), styles[e.level],
             terminal_styles[e.level])
 end)
 
