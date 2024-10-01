@@ -1,5 +1,5 @@
 # mpv-conf
-My personal mpv configuration. It is minimum and works well for my use case, which is usually a simple one that doesn't involve upscaling. Though I have an `auto-profile` for 2K+ videos included in my `mpv.conf`.
+My personal mpv configuration. It is minimum and works well for my use case, which is usually a simple one. Though I have an `auto-profile` for 2K+ videos included in my `mpv.conf`.
 
 Noteworthy details:
 - Huge cache `~1.5GB + ~400MiB`
@@ -19,14 +19,16 @@ Before using, review the files first to know what's being used.
 ## Scripts
 - Console ([Source](https://github.com/mpv-player/mpv/blob/master/player/lua/console.lua))
 - BoxToWide ([Source](https://github.com/Samillion/mpv-boxtowide)) [^1]
-- ModernX-Lite OSC ([Source](https://github.com/Samillion/ModernX-Lite)) [^2]
+- ModernX-Lite OSC ([Source](https://github.com/Samillion/ModernX-Lite)) [[Config](./script-opts/modernxlite.conf)] [^2]
 - Select ([Source](https://github.com/mpv-player/mpv/blob/master/player/lua/select.lua))
+- Sponsorblock-minimal ([Source](https://codeberg.org/jouni/mpv_sponsorblock_minimal))
 - Stats ([Source](https://github.com/mpv-player/mpv/blob/master/player/lua/stats.lua))
 - Thumbfast ([Source](https://github.com/po5/thumbfast)) [[Config](./script-opts/thumbfast.conf)]
-- YTDLAutoFormat ([Source](https://github.com/Samillion/mpv-ytdlautoformat)) [^1]
+- YTDLAutoFormat ([Source](https://github.com/Samillion/mpv-ytdlautoformat)) [^3]
 
-[^1]: Disclosure: Both `BoxToWide` and `YTDLAutoFormat` are scripts written and maintained by me.
-[^2]: ModernX-Lite OSC is a fork maintained by me.
+[^1]: `BoxToWide` is a script written and maintained by me.
+[^2]: `ModernX-Lite` is a fork maintained by me.
+[^3]: `YTDLAutoFormat` is a script written and maintained by me.
 
 > [!NOTE]
 > Source links lead to the respective repositories of the original authors.
@@ -54,6 +56,7 @@ conf/mpv
         console.lua
         modernxlite.lua
         select.lua
+        sponsorblock_minimal.lua
         stats.lua
         thumbfast.lua
         ytdlautoformat.lua
