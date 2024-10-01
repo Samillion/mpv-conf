@@ -14,6 +14,17 @@ jobs:
       uses: actions/checkout@v4 
 
     # compare and update the file if changed, with error checking for curl
+    - name: Sync sponsorblock_minimal.lua if updated
+      run: |
+        curl -s -w "%{http_code}" -o /tmp/sponsorblock_minimal.lua https://codeberg.org/jouni/mpv_sponsorblock_minimal/raw/branch/master/sponsorblock_minimal.lua | tee /tmp/curl_code
+        if [ $(cat /tmp/curl_code) -ne 200 ]; then
+          echo "Failed to download sponsorblock_minimal.lua (HTTP code $(cat /tmp/curl_code))"
+        elif ! cmp -s /tmp/sponsorblock_minimal.lua scripts/sponsorblock_minimal.lua; then
+          mv /tmp/sponsorblock_minimal.lua scripts/sponsorblock_minimal.lua
+        else
+          echo "sponsorblock_minimal.lua is up-to-date, no changes"
+        fi
+
     - name: Sync select.lua if updated
       run: |
         curl -s -w "%{http_code}" -o /tmp/select.lua https://raw.githubusercontent.com/mpv-player/mpv/refs/heads/master/player/lua/select.lua | tee /tmp/curl_code
@@ -58,24 +69,13 @@ jobs:
           echo "thumbfast.lua is up-to-date, no changes"
         fi
 
-    - name: Sync sponsorblock_minimal.lua if updated
-      run: |
-        curl -s -w "%{http_code}" -o /tmp/sponsorblock_minimal.lua https://codeberg.org/jouni/mpv_sponsorblock_minimal/raw/branch/master/sponsorblock_minimal.lua | tee /tmp/curl_code
-        if [ $(cat /tmp/curl_code) -ne 200 ]; then
-          echo "Failed to download sponsorblock_minimal.lua (HTTP code $(cat /tmp/curl_code))"
-        elif ! cmp -s /tmp/sponsorblock_minimal.lua scripts/sponsorblock_minimal.lua; then
-          mv /tmp/sponsorblock_minimal.lua scripts/sponsorblock_minimal.lua
-        else
-          echo "sponsorblock_minimal.lua is up-to-date, no changes"
-        fi
-
     # Commit and push only if files have been updated
     - name: Commit and push changes
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "GitHub Actions"
         if [ -n "$(git status --porcelain)" ]; then
-          git add scripts/autoload.lua scripts/console.lua scripts/stats.lua scripts/thumbfast.lua scripts/modernf.lua
+          git add scripts/sponsorblock_minimal.lua scripts/select.lua scripts/console.lua scripts/stats.lua scripts/thumbfast.lua
           git commit -m "Sync files from various sources if updated"
           git push
         else
