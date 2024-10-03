@@ -19,7 +19,7 @@ Before using, review the files first to know what's being used.
 ## Scripts
 - Console ([Source](https://github.com/mpv-player/mpv/blob/master/player/lua/console.lua))
 - BoxToWide ([Source](https://github.com/Samillion/mpv-boxtowide)) [^1]
-- ModernX-Lite OSC ([Source](https://github.com/Samillion/ModernX-Lite)) [[Config](./script-opts/modernxlite.conf)] [^2]
+- ModernZ OSC ([Source](https://github.com/Samillion/ModernZ)) [[Config](./script-opts/modernz.conf)] [^2]
 - Select ([Source](https://github.com/mpv-player/mpv/blob/master/player/lua/select.lua))
 - Sponsorblock-minimal ([Source](https://codeberg.org/jouni/mpv_sponsorblock_minimal))
 - Stats ([Source](https://github.com/mpv-player/mpv/blob/master/player/lua/stats.lua))
@@ -27,7 +27,7 @@ Before using, review the files first to know what's being used.
 - YTDLAutoFormat ([Source](https://github.com/Samillion/mpv-ytdlautoformat)) [^3]
 
 [^1]: `BoxToWide` is a script written and maintained by me.
-[^2]: `ModernX-Lite` is a fork maintained by me.
+[^2]: `ModernZ` is a fork maintained by me.
 [^3]: `YTDLAutoFormat` is a script written and maintained by me.
 
 > [!NOTE]
@@ -48,13 +48,13 @@ conf/mpv
 │       Material-Design-Iconic-Round.ttf
 │
 ├───script-opts
-│       modernxlite.conf
+│       modernz.conf
 │       thumbfast.conf
 │
 └───scripts
         boxtowide.lua
         console.lua
-        modernxlite.lua
+        modernz.lua
         select.lua
         sponsorblock_minimal.lua
         stats.lua
