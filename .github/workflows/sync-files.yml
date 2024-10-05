@@ -30,42 +30,6 @@ jobs:
           echo "sponsorblock_minimal.lua is up-to-date, no changes"
         fi
 
-    - name: Sync select.lua if updated
-      run: |
-        curl -s -w "%{http_code}" -o /tmp/select.lua https://raw.githubusercontent.com/mpv-player/mpv/refs/heads/master/player/lua/select.lua | tee /tmp/curl_code
-        if [ $(cat /tmp/curl_code) -ne 200 ]; then
-          echo "Failed to download select.lua (HTTP code $(cat /tmp/curl_code))"
-        elif ! cmp -s /tmp/select.lua scripts/select.lua; then
-          mv /tmp/select.lua scripts/select.lua
-          echo "scripts/select.lua" >> /tmp/updated_files.txt
-        else
-          echo "select.lua is up-to-date, no changes"
-        fi
-
-    - name: Sync console.lua if updated
-      run: |
-        curl -s -w "%{http_code}" -o /tmp/console.lua https://raw.githubusercontent.com/mpv-player/mpv/master/player/lua/console.lua | tee /tmp/curl_code
-        if [ $(cat /tmp/curl_code) -ne 200 ]; then
-          echo "Failed to download console.lua (HTTP code $(cat /tmp/curl_code))"
-        elif ! cmp -s /tmp/console.lua scripts/console.lua; then
-          mv /tmp/console.lua scripts/console.lua
-          echo "scripts/console.lua" >> /tmp/updated_files.txt
-        else
-          echo "console.lua is up-to-date, no changes"
-        fi
-
-    - name: Sync stats.lua if updated
-      run: |
-        curl -s -w "%{http_code}" -o /tmp/stats.lua https://raw.githubusercontent.com/mpv-player/mpv/master/player/lua/stats.lua | tee /tmp/curl_code
-        if [ $(cat /tmp/curl_code) -ne 200 ]; then
-          echo "Failed to download stats.lua (HTTP code $(cat /tmp/curl_code))"
-        elif ! cmp -s /tmp/stats.lua scripts/stats.lua; then
-          mv /tmp/stats.lua scripts/stats.lua
-          echo "scripts/stats.lua" >> /tmp/updated_files.txt
-        else
-          echo "stats.lua is up-to-date, no changes"
-        fi
-
     - name: Sync thumbfast.lua if updated
       run: |
         curl -s -w "%{http_code}" -o /tmp/thumbfast.lua https://raw.githubusercontent.com/po5/thumbfast/master/thumbfast.lua | tee /tmp/curl_code
