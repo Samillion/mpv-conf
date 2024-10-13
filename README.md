@@ -10,7 +10,6 @@ My personal mpv configuration. It is minimum and works well for my use case, whi
 - All keybinds are disabled, only few are set in `input.conf`
 - Matroska ordered chapters is disabled `ordered-chapters=no`
 - `watch-later-dir` is set to `~~/cache/watch_later`, the folder(s) were added manually
-- `osd-font` is set to `Segoe UI` which is a Windows font. To get the fonts, the URLs are commented
 - `screenshot-template` is set to `~/Desktop/%F-(%P)-%n` to save image on desktop with the specified name formatting
 - `sub-file-paths` are set for Windows with the `;` seperator, below it is the one for Unix
 - Default `ytdl-format` is set to ignore VP9 codec with `bv[vcodec!~='vp0?9']+ba/b`
