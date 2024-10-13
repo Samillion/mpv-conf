@@ -1,5 +1,5 @@
 ## mpv-conf
-![Preview](https://github.com/user-attachments/assets/23d91ec7-dc38-4b3f-b951-6b57cf907e60)
+![Preview](https://github.com/user-attachments/assets/115b0dda-c1d7-484c-9032-8005b6520540)
 
 My personal mpv configuration. It is minimum and works well for my use case, which is usually a simple one.
 
