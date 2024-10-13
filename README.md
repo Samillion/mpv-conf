@@ -1,15 +1,21 @@
 ## mpv-conf
 ![Preview](https://github.com/user-attachments/assets/23d91ec7-dc38-4b3f-b951-6b57cf907e60)
 
-My personal mpv configuration. It is minimum and works well for my use case, which is usually a simple one. Though I have an `auto-profile` for 2K+ videos included in my `mpv.conf`.
+My personal mpv configuration. It is minimum and works well for my use case, which is usually a simple one.
 
 Noteworthy details:
 - Huge cache `~1.5GB + ~400MiB`
 - Hardware decoding is disabled `hwdec=no`
 - All keybinds are disabled, only few are set in `input.conf`
 - Matroska ordered chapters is disabled `ordered-chapters=no`
+- `watch-later-dir` is set to `~~/cache/watch_later`, the folder(s) were added manually
+- `osd-font` is set to `Segoe UI` which is a Windows font. To get the fonts, the URLs are commented
+- `screenshot-template` is set to `~/Desktop/%F-(%P)-%n` to save image on desktop with the specified name formatting
+- `sub-file-paths` are set for Windows with the `;` seperator, below it is the one for Unix
+- Default `ytdl-format` is set to ignore VP9 codec with `bv[vcodec!~='vp0?9']+ba/b`
+- `Slideshow` auto-profile is very specific to my computer, leaving it there for reference.
 
-Before using, review the files first to know what's being used.
+Before using, please review the files first to know what's being used.
 
 > [!IMPORTANT]
 > My configuration works with [mpv v0.39.0](https://github.com/mpv-player/mpv/discussions/14903) and higher due to the use of things like `autocreate-playlist` that were introduced starting that version (and some v0.38 nightlies), which replaces `autoload.lua` script as a native feature.
