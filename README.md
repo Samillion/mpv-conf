@@ -3,7 +3,8 @@
 
 My personal mpv configuration. It is minimum and works well for my use case, which is usually a simple one.
 
-Noteworthy details:
+#### Noteworthy:
+
 - Huge cache `~1.5GB + ~400MiB`
 - Hardware decoding is disabled `hwdec=no`
 - All keybinds are disabled, only few are set in `input.conf`
