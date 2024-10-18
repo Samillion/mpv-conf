@@ -27,7 +27,7 @@ Before using, please review the files first to know what's being used.
 ## Scripts
 - BoxToWide ([Source](https://github.com/Samillion/mpv-boxtowide)) [^1]
 - ModernZ OSC ([Source](https://github.com/Samillion/ModernZ)) [[Config](./script-opts/modernz.conf)] [^2]
-- Pause Indicator Lite ([Source](https://github.com/Samillion/ModernZ/issues/52)) [^3]
+- Pause Indicator Lite ([Source](https://github.com/Samillion/ModernZ/tree/main/extras#pause-indicator-lite)) [^3]
 - SmartCopyPaste ([Source](https://github.com/Eisa01/mpv-scripts?tab=readme-ov-file#smartcopypaste))
 - Sponsorblock-minimal ([Source](https://codeberg.org/jouni/mpv_sponsorblock_minimal))
 - Thumbfast ([Source](https://github.com/po5/thumbfast)) [[Config](./script-opts/thumbfast.conf)]
