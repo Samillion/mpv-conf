@@ -27,14 +27,17 @@ Before using, please review the files first to know what's being used.
 ## Scripts
 - BoxToWide ([Source](https://github.com/Samillion/mpv-boxtowide)) [^1]
 - ModernZ OSC ([Source](https://github.com/Samillion/ModernZ)) [[Config](./script-opts/modernz.conf)] [^2]
+- Pause Indicator Lite ([Source](https://github.com/Samillion/ModernZ/issues/52)) [^3]
 - SmartCopyPaste ([Source](https://github.com/Eisa01/mpv-scripts?tab=readme-ov-file#smartcopypaste))
 - Sponsorblock-minimal ([Source](https://codeberg.org/jouni/mpv_sponsorblock_minimal))
 - Thumbfast ([Source](https://github.com/po5/thumbfast)) [[Config](./script-opts/thumbfast.conf)]
-- YTDLAutoFormat ([Source](https://github.com/Samillion/mpv-ytdlautoformat)) [^3]
+- YTDLAutoFormat ([Source](https://github.com/Samillion/mpv-ytdlautoformat)) [^4]
 
 [^1]: `BoxToWide` is a script written and maintained by me.
 [^2]: `ModernZ` is a fork maintained by me.
-[^3]: `YTDLAutoFormat` is a script written and maintained by me.
+[^3]: `Pause Indicator Lite` is a script written and maintained by me.
+[^4]: `YTDLAutoFormat` is a script written and maintained by me.
+
 
 > [!NOTE]
 > Source links lead to the respective repositories of the original authors.
