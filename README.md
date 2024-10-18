@@ -62,6 +62,7 @@ conf/mpv
 └───scripts
         boxtowide.lua
         modernz.lua
+        pause_indicator_lite.lua
         SmartCopyPaste.lua
         sponsorblock_minimal.lua
         thumbfast.lua
