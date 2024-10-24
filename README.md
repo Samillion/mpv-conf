@@ -1,24 +1,24 @@
 ## mpv-conf
 ![Preview](https://github.com/user-attachments/assets/115b0dda-c1d7-484c-9032-8005b6520540)
 
-My personal mpv configuration. It is minimum and works well for my use case, which is usually a simple one.
+My personal mpv configuration is minimal and tailored to my simple use case.
 
 #### Noteworthy:
 
-- Huge cache `~1.5GB + ~400MiB`
-- Hardware decoding is disabled `hwdec=no`
-- All keybinds are disabled, only few are set in `input.conf`
-- Matroska ordered chapters is disabled `ordered-chapters=no`
-- `watch-later-dir` is set to `~~/cache/watch_later`, the folder(s) were added manually
-- `screenshot-template` is set to `~/Desktop/%F-(%P)-%n` to save image on desktop with the specified name formatting
-- `sub-file-paths` are set for Windows with the `;` seperator, below it is the one for Unix
-- Default `ytdl-format` is set to ignore VP9 codec with `bv[vcodec!~='vp0?9']+ba/b`
-- `Slideshow` auto-profile is very specific to my computer, leaving it there for reference.
+- Large cache size: `~1.5GB + ~400MiB`
+- Hardware decoding disabled: `hwdec=no`
+- All keybinds disabled, except for a few in `input.conf`
+- Matroska ordered chapters disabled: `ordered-chapters=no`
+- `watch-later-dir` set to `~~/cache/watch_later` (folder[s] created manually)
+- `screenshot-template` saves images to the desktop: `~/Desktop/%F-(%P)-%n`
+- `sub-file-paths` set with `;` separator for Windows
+- Default `ytdl-format` ignores VP9 codec: `bv[vcodec!~='vp0?9']+ba/b`
+- `Slideshow` auto-profile is system-specific, kept for reference.
 
-Before using, please review the files first to know what's being used.
+Please review the files before using to understand what is included.
 
-> [!IMPORTANT]
-> My configuration works with [mpv v0.39.0](https://github.com/mpv-player/mpv/discussions/14903) and higher due to the use of things like `autocreate-playlist` that were introduced starting that version (and some v0.38 nightlies), which replaces `autoload.lua` script as a native feature.
+> [!IMPORTANT]  
+> This configuration requires [mpv v0.39.0](https://github.com/mpv-player/mpv/discussions/14903) or higher, as it utilizes features like `autocreate-playlist` introduced in that version (and some v0.38 nightlies), replacing the `autoload.lua` script as a native function.
 
 ## Configuration
 - Main configuration [[mpv.conf](./mpv.conf)]
