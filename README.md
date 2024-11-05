@@ -1,5 +1,5 @@
 ## mpv-conf
-![Preview](https://github.com/user-attachments/assets/115b0dda-c1d7-484c-9032-8005b6520540)
+![modernz-osc](https://github.com/user-attachments/assets/88183ead-0077-4bd1-b8cb-54d2953728c5)
 
 My personal mpv configuration is minimal and tailored to my simple use case.
 
@@ -18,7 +18,7 @@ My personal mpv configuration is minimal and tailored to my simple use case.
 Please review the files before using to understand what is included.
 
 > [!IMPORTANT]  
-> This configuration requires [mpv v0.39.0](https://github.com/mpv-player/mpv/discussions/14903) or higher, as it utilizes features like `autocreate-playlist` introduced in that version (and some v0.38 nightlies), replacing the `autoload.lua` script as a native function.
+> This configuration requires mpv v0.39+, as it utilizes features like `autocreate-playlist` introduced in that version (and some v0.38 nightlies), replacing the `autoload.lua` script as a native function.
 
 ## Configuration
 - Main configuration [[mpv.conf](./mpv.conf)]
@@ -26,6 +26,7 @@ Please review the files before using to understand what is included.
 
 ## Scripts
 - BoxToWide ([Source](https://github.com/Samillion/mpv-boxtowide)) [^1]
+- Image-Bindings ([Source](https://github.com/guidocella/mpv-image-config/blob/main/scripts/image-bindings.lua)) [[Modified](./scripts/image-bindings.lua)]
 - ModernZ OSC ([Source](https://github.com/Samillion/ModernZ)) [[Config](./script-opts/modernz.conf)] [^2]
 - Pause Indicator Lite ([Source](https://github.com/Samillion/ModernZ/tree/main/extras/pause-indicator-lite)) [^3]
 - SmartCopyPaste ([Source](https://github.com/Eisa01/mpv-scripts?tab=readme-ov-file#smartcopypaste))
@@ -53,7 +54,7 @@ conf/mpv
 │   mpv.conf
 │
 ├───fonts
-│       Material-Design-Iconic-Round.ttf
+│       fluent-system-icons.ttf
 │
 ├───script-opts
 │       modernz.conf
@@ -61,6 +62,7 @@ conf/mpv
 │
 └───scripts
         boxtowide.lua
+        image-bindings.lua
         modernz.lua
         pause_indicator_lite.lua
         SmartCopyPaste.lua
@@ -70,4 +72,4 @@ conf/mpv
 ```
 
 > [!NOTE]
-> More information about files locations can be found  [here](https://mpv.io/manual/master/#files)
+> More information about files locations can be found [here](https://mpv.io/manual/master/#files)
