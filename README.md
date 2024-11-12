@@ -1,5 +1,5 @@
 ## mpv-conf
-![modernz-osc](https://github.com/user-attachments/assets/88183ead-0077-4bd1-b8cb-54d2953728c5)
+![modernz-osc](https://github.com/user-attachments/assets/03ea7f7d-7963-4ced-867e-4562460bbf0e)
 
 My personal mpv configuration is minimal and tailored to my simple use case.
 
