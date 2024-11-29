@@ -5,15 +5,15 @@ My personal mpv configuration is minimal and tailored to my simple use case.
 
 #### Noteworthy:
 
-- Large cache size: `~1.5GB + ~400MiB`
 - Hardware decoding disabled: `hwdec=no`
-- All keybinds disabled, except for a few in `input.conf`
+- Default keybinds disabled: `input-default-bindings=no`
+    - Few custom keybinds are set in [input.conf](https://github.com/Samillion/mpv-conf/blob/master/input.conf)
 - Matroska ordered chapters disabled: `ordered-chapters=no`
-- `watch-later-dir` set to `~~/cache/watch_later` (folder[s] created manually)
+- `watch-later-dir` set to `~~/cache/watch_later`
 - `screenshot-template` saves images to the desktop: `~/Desktop/%F-(%P)-%n`
-- `sub-file-paths` set with `;` separator for Windows
+- `sub-file-paths` set with `;` separator for Windows OS
 - Default `ytdl-format` ignores VP9 codec: `bv[vcodec!~='vp0?9']+ba/b`
-- `Slideshow` auto-profile is system-specific, kept for reference.
+- `[Media]` and `[Slideshow]` auto-profiles are system-specific, kept for reference.
 
 Please review the files before using to understand what is included.
 
