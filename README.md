@@ -14,6 +14,7 @@ My personal mpv configuration is minimal and tailored to my simple use case.
 - `sub-file-paths` set with `;` separator for Windows OS
 - Default `ytdl-format` ignores VP9 codec: `bv[vcodec!~='vp0?9']+ba/b`
 - `[Media]` and `[Slideshow]` auto-profiles are system-specific, kept for reference.
+- Some options are Windows OS specific, in use or value. Such as `sub-file-paths` (separator), `ytdl-raw-options` (value), `taskbar-progress` (use).
 
 Please review the files before using to understand what is included.
 
