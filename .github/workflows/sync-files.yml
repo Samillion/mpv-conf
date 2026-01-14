@@ -1,4 +1,4 @@
-name: sync: update scripts from source if change found
+name: "sync: update scripts from source if change found"
 
 on:
   schedule:
@@ -10,14 +10,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: "chore: checkout repository"
         uses: actions/checkout@v4
 
       # hold the list of updated files
-      - name: Initialize updated files list
+      - name: "chore: initialize updated files list"
         run: echo "" > /tmp/updated_files.txt
 
-      - name: sync: update mpv scripts
+      - name: "sync: update mpv scripts"
         run: |
           sync_file() {
             local url="$1"
@@ -47,12 +47,12 @@ jobs:
             "https://raw.githubusercontent.com/po5/thumbfast/master/thumbfast.lua" \
             "scripts/thumbfast.lua"
 
-      - name: chore: debug updated files
+      - name: "chore: debug updated files"
         run: |
           echo "Updated files:"
           sed '/^$/d' /tmp/updated_files.txt || echo "No files were updated"
 
-      - name: chore: commit and push changes
+      - name: "chore: commit and push changes"
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "GitHub Actions"
