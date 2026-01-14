@@ -1,4 +1,4 @@
-name: Sync files only if sources are updated
+name: sync: update scripts from source if change found
 
 on:
   schedule:
@@ -10,73 +10,69 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4 
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    # hold the list of updated files
-    - name: Initialize updated files list
-      run: echo "" > /tmp/updated_files.txt
+      # hold the list of updated files
+      - name: Initialize updated files list
+        run: echo "" > /tmp/updated_files.txt
 
-    # compare and update the file if changed, with error checking for curl
-    - name: Sync sponsorblock_minimal.lua if updated
-      run: |
-        curl -s -w "%{http_code}" -o /tmp/sponsorblock_minimal.lua https://codeberg.org/jouni/mpv_sponsorblock_minimal/raw/branch/master/sponsorblock_minimal.lua | tee /tmp/curl_code
-        if [ $(cat /tmp/curl_code) -ne 200 ]; then
-          echo "Failed to download sponsorblock_minimal.lua (HTTP code $(cat /tmp/curl_code))"
-        elif ! cmp -s /tmp/sponsorblock_minimal.lua scripts/sponsorblock_minimal.lua; then
-          mv /tmp/sponsorblock_minimal.lua scripts/sponsorblock_minimal.lua
-          echo "scripts/sponsorblock_minimal.lua" >> /tmp/updated_files.txt
-        else
-          echo "sponsorblock_minimal.lua is up-to-date, no changes"
-        fi
+      - name: sync: update mpv scripts
+        run: |
+          sync_file() {
+            local url="$1"
+            local dest="$2"
+            local tmp="/tmp/$(basename "$dest")"
 
-    - name: Sync thumbfast.lua if updated
-      run: |
-        curl -s -w "%{http_code}" -o /tmp/thumbfast.lua https://raw.githubusercontent.com/po5/thumbfast/master/thumbfast.lua | tee /tmp/curl_code
-        if [ $(cat /tmp/curl_code) -ne 200 ]; then
-          echo "Failed to download thumbfast.lua (HTTP code $(cat /tmp/curl_code))"
-        elif ! cmp -s /tmp/thumbfast.lua scripts/thumbfast.lua; then
-          mv /tmp/thumbfast.lua scripts/thumbfast.lua
-          echo "scripts/thumbfast.lua" >> /tmp/updated_files.txt
-        else
-          echo "thumbfast.lua is up-to-date, no changes"
-        fi
-
-    - name: Debug updated files
-      run: |
-        echo "Updated files:"
-        cat /tmp/updated_files.txt || echo "No files were updated"
-
-    # Commit and push only if files from /tmp/updated_files.txt have been updated
-    - name: Commit and push changes
-      run: |
-        git config --local user.email "github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "GitHub Actions"
-
-        # Remove empty lines from the updated_files.txt
-        sed -i '/^$/d' /tmp/updated_files.txt
-
-        # Check if /tmp/updated_files.txt exists and is non-empty
-        if [ -s /tmp/updated_files.txt ]; then
-          # Iterate over each file in /tmp/updated_files.txt and add only if it exists
-          while IFS= read -r file; do
-            if [ -f "$file" ]; then
-              git add "$file"
-            else
-              echo "File $file not found, skipping."
+            HTTP_CODE=$(curl -sS -f -w "%{http_code}" -o "$tmp" "$url" || echo "000")
+            if [ "$HTTP_CODE" != "200" ]; then
+              echo "Failed to download $dest (HTTP code $HTTP_CODE)"
+              return
             fi
-          done < /tmp/updated_files.txt
 
-          # Check if there are any staged changes for commit
-          if [ -n "$(git status --porcelain)" ]; then
-            git commit -m "Sync files from various sources if updated"
-            git push
+            if ! cmp -s "$tmp" "$dest"; then
+              mv "$tmp" "$dest"
+              echo "$dest" >> /tmp/updated_files.txt
+              echo "Updated $dest"
+            else
+              echo "$(basename "$dest") is up-to-date"
+            fi
+          }
+
+          sync_file \
+            "https://codeberg.org/jouni/mpv_sponsorblock_minimal/raw/branch/master/sponsorblock_minimal.lua" \
+            "scripts/sponsorblock_minimal.lua"
+
+          sync_file \
+            "https://raw.githubusercontent.com/po5/thumbfast/master/thumbfast.lua" \
+            "scripts/thumbfast.lua"
+
+      - name: chore: debug updated files
+        run: |
+          echo "Updated files:"
+          sed '/^$/d' /tmp/updated_files.txt || echo "No files were updated"
+
+      - name: chore: commit and push changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "GitHub Actions"
+
+          # remove empty lines
+          sed -i '/^$/d' /tmp/updated_files.txt
+
+          if [ -s /tmp/updated_files.txt ]; then
+            while IFS= read -r file; do
+              if [ -f "$file" ]; then
+                git add "$file"
+              else
+                echo "File $file not found, skipping."
+              fi
+            done < /tmp/updated_files.txt
+
+            git commit -m "Sync files from various sources if updated" && git push || \
+              echo "No changes to commit"
           else
-            echo "No changes to commit after staging"
+            echo "No files were updated"
           fi
-        else
-          echo "No files were updated"
-          rm -f /tmp/updated_files.txt  # Remove the file if it's empty or not needed
-        fi
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
