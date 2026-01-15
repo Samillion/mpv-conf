@@ -5,13 +5,11 @@ My personal mpv configuration is minimal and tailored to my simple use case.
 
 #### Noteworthy:
 
-- Hardware decoding is disabled: `hwdec=no` (enabled for 2k+ res videos)
 - Default keybinds are disabled: `input-default-bindings=no`
     - Few custom keybinds are set in [input.conf](https://github.com/Samillion/mpv-conf/blob/master/input.conf)
 - Matroska ordered chapters is disabled: `ordered-chapters=no`
 - `[Media]` and `[Slideshow]` auto-profiles are system-specific, kept for reference.
 - Some options are Windows OS specific, in use or value.
-  - `gpu-api=d3d11` [[details](https://mpv.io/manual/master/#options-gpu-api)]
   - `sub-file-paths` (separator) [[details](https://mpv.io/manual/master/#options-sub-file-paths)]
   - `taskbar-progress` [[details](https://mpv.io/manual/master/#options-taskbar-progress)]
   - `screenshot-template` saves images to: `~/Desktop/%F-(%P)-%n`
