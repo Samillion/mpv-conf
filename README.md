@@ -3,16 +3,18 @@
 
 My personal mpv configuration is minimal and tailored to my simple use case.
 
-#### Noteworthy:
+#### Notes:
 
+- Using `profile=high-quality`
+  - Typically this is advised to be used with a capable dedicated GPU, otherwise use `fast` profile or no profile (default)
+  - You can view the profile details with `mpv --show-profile=high-quality`
 - Default keybinds are disabled: `input-default-bindings=no`
     - Few custom keybinds are set in [input.conf](https://github.com/Samillion/mpv-conf/blob/master/input.conf)
 - Matroska ordered chapters is disabled: `ordered-chapters=no`
-- `[Media]` and `[Slideshow]` auto-profiles are system-specific, kept for reference.
-- Some options are Windows OS specific, in use or value.
+- `[Media]` and `[Slideshow]` auto-profiles are system-specific, use as reference or adjust
+- Some options are Windows OS specific, in use or value
   - `sub-file-paths` (separator) [[details](https://mpv.io/manual/master/#options-sub-file-paths)]
   - `taskbar-progress` [[details](https://mpv.io/manual/master/#options-taskbar-progress)]
-  - `screenshot-template` saves images to: `~/Desktop/%F-(%P)-%n`
 
 Please review the files before using to understand what is included.
 
