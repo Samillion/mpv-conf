@@ -9,7 +9,7 @@
 ## Notes
 
 - Using `profile=high-quality`
-  - Use with a capable dedicated GPU, otherwise use `fast` profile or no profile (default)
+  - Use with a capable dedicated GPU, otherwise use `profile=fast` or no profile (default)
   - You can view the profile details with `mpv --show-profile=high-quality`
 - Default keybinds are disabled: `input-default-bindings=no`
     - Few custom keybinds are set in [input.conf](https://github.com/Samillion/mpv-conf/blob/master/input.conf)
@@ -20,7 +20,7 @@
   - `taskbar-progress` [[details](https://mpv.io/manual/master/#options-taskbar-progress)]
 
 > [!IMPORTANT]  
-> mpv v0.39 or newer is required due to reliance on features like autocreate-playlist, which replaces autoload.lua with native functionality.
+> <ins>**mpv v0.39 or newer is required**</ins> due to reliance on features like `autocreate-playlist`, which replaces `autoload.lua` with native functionality.
 > Please review the files before use to understand their contents.
 
 ## Configuration
