@@ -1,9 +1,12 @@
-## mpv-conf
+## Overview
+
 ![ModernZ-OSC](https://github.com/user-attachments/assets/f6854de6-1d57-4b2f-848e-7197933b71aa)
 
-My personal mpv configuration is minimal and tailored to my simple use case.
+<p align="center">
+    Configuration files and scripts I use for mpv, tailored to a generally minimal and straightforward use case.
+</p>
 
-#### Notes:
+## Notes
 
 - Using `profile=high-quality`
   - Use with a capable dedicated GPU, otherwise use `fast` profile or no profile (default)
@@ -16,10 +19,9 @@ My personal mpv configuration is minimal and tailored to my simple use case.
   - `sub-file-paths` (separator) [[details](https://mpv.io/manual/master/#options-sub-file-paths)]
   - `taskbar-progress` [[details](https://mpv.io/manual/master/#options-taskbar-progress)]
 
-Please review the files before using to understand what is included.
-
 > [!IMPORTANT]  
-> This configuration requires mpv v0.39+, as it utilizes features like `autocreate-playlist` introduced in that version (and some v0.38 nightlies), replacing the `autoload.lua` script as a native function.
+> mpv v0.39 or newer is required due to reliance on features like autocreate-playlist, which replaces autoload.lua with native functionality.
+> Please review the files before use to understand their contents.
 
 ## Configuration
 - Main configuration [[mpv.conf](./mpv.conf)]
@@ -44,7 +46,7 @@ Please review the files before using to understand what is included.
 > [!NOTE]
 > Source links lead to the respective repositories of the original authors.
 
-## Config and Scripts Locations
+## File Locations
 - Windows: `%APPDATA%\mpv\` or `C:\users\USERNAME\AppData\Roaming\mpv\`
 - Linux: `~/.config/mpv/` or `/home/USERNAME/.config/mpv/`
 - Mac: `~/.config/mpv/` or `/Users/USERNAME/.config/mpv/`
