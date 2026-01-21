@@ -6,7 +6,7 @@ My personal mpv configuration is minimal and tailored to my simple use case.
 #### Notes:
 
 - Using `profile=high-quality`
-  - Typically this is advised to be used with a capable dedicated GPU, otherwise use `fast` profile or no profile (default)
+  - Use with a capable dedicated GPU, otherwise use `fast` profile or no profile (default)
   - You can view the profile details with `mpv --show-profile=high-quality`
 - Default keybinds are disabled: `input-default-bindings=no`
     - Few custom keybinds are set in [input.conf](https://github.com/Samillion/mpv-conf/blob/master/input.conf)
