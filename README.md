@@ -11,6 +11,9 @@
 - Using `profile=high-quality`
   - Use with a capable dedicated GPU, otherwise use `profile=fast` or no profile (default)
   - You can view the profile details with `mpv --show-profile=high-quality`
+- Hardware decoding enabled
+  - using `gpu-api=vulkan` and `hwdec=nvdec` (Nvidia GPU)
+  - Known slow startup issue: https://github.com/mpv-player/mpv/issues/13019
 - Default keybinds are disabled: `input-default-bindings=no`
     - Few custom keybinds are set in [input.conf](https://github.com/Samillion/mpv-conf/blob/master/input.conf)
 - Matroska ordered chapters is disabled: `ordered-chapters=no`
