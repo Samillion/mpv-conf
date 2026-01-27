@@ -1,4 +1,4 @@
-name: "sync: update scripts from source if change found"
+name: "sync: check sources and update"
 
 on:
   schedule:
@@ -78,7 +78,7 @@ jobs:
               fi
             done < /tmp/updated_files.txt
 
-            git commit -m "Sync files from various sources if updated" && git push || \
+            git commit -m "sync: update from source repo" && git push || \
               echo "No changes to commit"
           else
             echo "No files were updated"
