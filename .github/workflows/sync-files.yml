@@ -47,6 +47,10 @@ jobs:
             "https://raw.githubusercontent.com/po5/thumbfast/master/thumbfast.lua" \
             "scripts/thumbfast.lua"
 
+          sync_file \
+            "https://raw.githubusercontent.com/mpv-player/mpv/refs/heads/master/etc/menu.conf" \
+            "script-opts/menu.conf"
+
       - name: "chore: debug updated files"
         run: |
           echo "Updated files:"
