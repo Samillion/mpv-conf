@@ -2,12 +2,14 @@ name: "sync: update scripts from source if change found"
 
 on:
   schedule:
-    - cron: '0 0 2 * *'
+    - cron: "0 0 2 * *"
   workflow_dispatch:
 
 jobs:
   sync_files:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: "chore: checkout repository"
@@ -22,11 +24,13 @@ jobs:
           sync_file() {
             local url="$1"
             local dest="$2"
-            local tmp="/tmp/$(basename "$dest")"
+            local tmp
+            tmp="$(mktemp)"
 
-            HTTP_CODE=$(curl -sS -f -w "%{http_code}" -o "$tmp" "$url" || echo "000")
+            HTTP_CODE=$(curl -sS -f --retry 3 --retry-delay 5 -w "%{http_code}" -o "$tmp" "$url" || echo "000")
             if [ "$HTTP_CODE" != "200" ]; then
               echo "Failed to download $dest (HTTP code $HTTP_CODE)"
+              rm -f "$tmp"
               return
             fi
 
@@ -35,6 +39,7 @@ jobs:
               echo "$dest" >> /tmp/updated_files.txt
               echo "Updated $dest"
             else
+              rm -f "$tmp"
               echo "$(basename "$dest") is up-to-date"
             fi
           }
