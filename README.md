@@ -10,15 +10,15 @@
 
 - Using `profile=high-quality`
   - Use with a capable dedicated GPU, otherwise use `profile=fast` or no profile (default)
-  - You can view the profile details with `mpv --show-profile=high-quality`
+  - You can view profile details with `mpv --show-profile=high-quality`
 - Hardware decoding enabled
-  - Using `gpu-api=d3d11` and `hwdec=d3d11va` (Nvidia GPU)
+  - Using `gpu-api=d3d11` and `hwdec=d3d11va` (Nvidia GPU, Windows)
   - ~~Using `gpu-api=vulkan` and `hwdec=nvdec` (Nvidia GPU)~~
-    - Known slow startup Vulkan issue: https://github.com/mpv-player/mpv/issues/13019
+    - Slow startup with `Vulkan+Nvidia`: https://github.com/mpv-player/mpv/issues/13019
 - Default keybinds are disabled: `input-default-bindings=no`
-    - Few custom keybinds are set in [input.conf](https://github.com/Samillion/mpv-conf/blob/master/input.conf)
+    - Custom keybinds are set in [input.conf](https://github.com/Samillion/mpv-conf/blob/master/input.conf)
 - Matroska ordered chapters is disabled: `ordered-chapters=no`
-- `[Media]` and `[Slideshow]` auto-profiles are system-specific, use as reference or adjust
+- `[Media]` and `[Slideshow]` auto-profiles are system specific, use as reference or adjust
 - Some options are Windows OS specific, in use or value
   - `sub-file-paths` (separator) [[details](https://mpv.io/manual/master/#options-sub-file-paths)]
   - `taskbar-progress` [[details](https://mpv.io/manual/master/#options-taskbar-progress)]
@@ -28,8 +28,8 @@
 > Please review the files before use to understand their contents.
 
 ## Configuration
-- Main configuration [[mpv.conf](./mpv.conf)]
-- Input key bindings [[input.conf](./input.conf)]
+- Main [[mpv.conf](./mpv.conf)]
+- Key bindings [[input.conf](./input.conf)]
 
 ## Scripts
 - BoxToWide ([Source](https://github.com/Samillion/mpv-boxtowide)) [^1]
@@ -65,7 +65,6 @@ config/mpv
 |       material-design-icons.ttf
 │
 ├───script-opts
-|       menu.conf
 │       modernz.conf
 │       thumbfast.conf
 │
