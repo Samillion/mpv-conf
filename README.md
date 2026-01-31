@@ -58,6 +58,7 @@
 ```
 config/mpv
 │   input.conf
+|   menu.conf
 │   mpv.conf
 │
 ├───fonts
