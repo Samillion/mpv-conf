@@ -30,6 +30,7 @@
 ## Configuration
 - Main [[mpv.conf](./mpv.conf)]
 - Key bindings [[input.conf](./input.conf)]
+- Context menu [[menu.conf](./menu.conf)]
 
 ## Scripts
 - BoxToWide ([Source](https://github.com/Samillion/mpv-boxtowide)) [^1]
