@@ -1,6 +1,6 @@
 ## Overview
 
-![ModernZ-OSC](https://github.com/user-attachments/assets/f6854de6-1d57-4b2f-848e-7197933b71aa)
+![54b36db099](https://github.com/user-attachments/assets/9c11c28d-25d7-46e5-9044-67d4653b189a)
 
 <p align="center">
     Configuration files and scripts I use for mpv, tailored to a generally minimal and straightforward use case.
