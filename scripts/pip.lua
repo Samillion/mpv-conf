@@ -32,7 +32,7 @@ local function set_pip_mode()
     mp.set_property("autofit-larger", options.autofit_larger)
 
     -- delay geometry to avoid race
-    mp.add_timeout(0.05, function()
+    mp.add_timeout(0.02, function()
         mp.set_property("geometry", options.geometry)
     end)
 end
@@ -42,7 +42,11 @@ local function restore_mode()
 
     mp.set_property("autofit",  state.autofit or "")
     mp.set_property("autofit-larger", state.autofit_larger or "")
-    mp.set_property("geometry", options.geometry_restore)
+
+    -- delay geometry to avoid race
+    mp.add_timeout(0.02, function()
+        mp.set_property("geometry", options.geometry_restore)
+    end)
 
     pip_active = false
 end
