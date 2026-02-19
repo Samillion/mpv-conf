@@ -40,18 +40,8 @@ end
 local function restore_mode()
     if not pip_active then return end
 
-    if state.autofit then
-        mp.set_property("autofit", state.autofit)
-    else
-        mp.set_property("autofit", "")
-    end
-
-    if state.autofit_larger then
-        mp.set_property("autofit-larger", state.autofit_larger)
-    else
-        mp.set_property("autofit-larger", "")
-    end
-
+    mp.set_property("autofit",  state.autofit or "")
+    mp.set_property("autofit-larger", state.autofit_larger or "")
     mp.set_property("geometry", options.geometry_restore)
 
     pip_active = false
