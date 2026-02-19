@@ -1,7 +1,8 @@
 --[[
 
-    This script resizes and moves window to bottom right of display
-    when ontop (pin) is active. A PIP mode.
+    This script adds a PiP mode to ontop (pin).
+    When ontop is enabled, window is resized and moved to bottom right.
+    Fit and position can by adjusted in options.
 
     More info: https://github.com/Samillion/mpv-conf
 
