@@ -10,7 +10,8 @@
 local options = {
     autofit = "40%x30%",
     autofit_larger = "40%x30%",
-    geometry = "100%:100%",
+    geometry = "-0-0",            -- bottom-right: -0-0 or 100%:100%
+    geometry_restore = "50%:50%"  -- center: 50%:50%
 }
 
 local state = {}
@@ -21,33 +22,39 @@ local function set_pip_mode()
         return
     end
 
-    -- store current states
     if not pip_active then
         state.autofit = mp.get_property("autofit")
         state.autofit_larger = mp.get_property("autofit-larger")
-        state.geometry = mp.get_property("geometry")
         pip_active = true
     end
 
-    -- set pip mode
     mp.set_property("autofit", options.autofit)
     mp.set_property("autofit-larger", options.autofit_larger)
-    mp.set_property("geometry", options.geometry)
+
+    -- delay geometry to avoid race
+    mp.add_timeout(0.05, function()
+        mp.set_property("geometry", options.geometry)
+    end)
 end
 
 local function restore_mode()
-    if pip_active then
-        if state.autofit then
-            mp.set_property("autofit", state.autofit)
-        end
-        if state.autofit_larger then
-            mp.set_property("autofit-larger", state.autofit_larger)
-        end
-        if state.geometry then
-            mp.set_property("geometry", state.geometry)
-        end
-        pip_active = false
+    if not pip_active then return end
+
+    if state.autofit then
+        mp.set_property("autofit", state.autofit)
+    else
+        mp.set_property("autofit", "")
     end
+
+    if state.autofit_larger then
+        mp.set_property("autofit-larger", state.autofit_larger)
+    else
+        mp.set_property("autofit-larger", "")
+    end
+
+    mp.set_property("geometry", options.geometry_restore)
+
+    pip_active = false
 end
 
 local function on_ontop_change(_, value)
