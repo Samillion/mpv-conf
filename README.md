@@ -37,7 +37,7 @@
 - Image-Bindings ([Source](https://github.com/guidocella/mpv-image-config/blob/main/scripts/image-bindings.lua)) [[Modified](./scripts/image-bindings.lua)]
 - ModernZ OSC ([Source](https://github.com/Samillion/ModernZ)) [[Config](./script-opts/modernz.conf)] [^2]
 - Pause Indicator Lite ([Source](https://github.com/Samillion/ModernZ/tree/main/extras/pause-indicator-lite)) [^3]
-- Picture-in-Picture ([Source](./scripts/pip.lua)) [^4]
+- PiP-Lite (Picture-in-Picture) ([Source](https://github.com/Samillion/ModernZ/tree/main/extras/pip-lite)) [^4]
 - Sponsorblock-minimal ([Source](https://codeberg.org/jouni/mpv_sponsorblock_minimal))
 - Thumbfast ([Source](https://github.com/po5/thumbfast)) [[Config](./script-opts/thumbfast.conf)]
   - Windows: If you get an error `cannot create mpv subprocess` this https://github.com/po5/thumbfast/issues/154#issuecomment-3437029385 shows how to fix it, which is basically reverting this commit [po5/thumbfast@9deb073](https://github.com/po5/thumbfast/commit/9deb0733c4e36938cf90e42ddfb7a19a8b2f4641)
@@ -46,7 +46,7 @@
 [^1]: `BoxToWide` is a script written and maintained by me.
 [^2]: `ModernZ` is a fork maintained by me.
 [^3]: `Pause Indicator Lite` is a script written and maintained by me.
-[^4]: `Picture-in-Picture` is a script written and maintained by me.
+[^4]: `PiP-Lite (Picture-in-Picture)` is a script written and maintained by me.
 [^5]: `ytdlAutoFormat` is a script written and maintained by me.
 
 
@@ -77,7 +77,7 @@ config/mpv
         image-bindings.lua
         modernz.lua
         pause_indicator_lite.lua
-        pip.lua
+        pip_lite.lua
         sponsorblock_minimal.lua
         thumbfast.lua
         ytdlautoformat.lua
