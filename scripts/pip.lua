@@ -11,45 +11,53 @@
 local options = {
     autofit = "40%x30%",
     autofit_larger = "40%x30%",
-    geometry = "100%:100%",       -- bottom-right: -0-0 or 100%:100%
-    geometry_restore = "50%:50%"  -- center: 50%:50%
+    geometry = "100%:100%",        -- bottom-right: -0-0 or 100%:100%
+    geometry_restore = "50%:50%",  -- center: 50%:50%
+    geometry_delay = 0.02          -- geo delay time to avoid race
 }
 
-local state = {}
-local pip_active = false
+local state = {
+    pip = false,
+    geometry_timer = nil
+}
+
+local function set_geometry_delay(value)
+    -- kill active timer if it exists
+    if state.geometry_timer then
+        state.geometry_timer:kill()
+        state.geometry_timer = nil
+    end
+
+    state.geometry_timer = mp.add_timeout(options.geometry_delay, function()
+        mp.set_property("geometry", value)
+        state.geometry_timer = nil
+    end)
+end
 
 local function set_pip_mode()
     if mp.get_property_bool("fullscreen") then
         return
     end
 
-    if not pip_active then
+    if not state.pip then
         state.autofit = mp.get_property("autofit")
         state.autofit_larger = mp.get_property("autofit-larger")
-        pip_active = true
+        state.pip = true
     end
 
     mp.set_property("autofit", options.autofit)
     mp.set_property("autofit-larger", options.autofit_larger)
-
-    -- delay geometry to avoid race
-    mp.add_timeout(0.02, function()
-        mp.set_property("geometry", options.geometry)
-    end)
+    set_geometry_delay(options.geometry)
 end
 
 local function restore_mode()
-    if not pip_active then return end
+    if not state.pip then return end
 
     mp.set_property("autofit",  state.autofit or "")
     mp.set_property("autofit-larger", state.autofit_larger or "")
+    set_geometry_delay(options.geometry_restore)
 
-    -- delay geometry to avoid race
-    mp.add_timeout(0.02, function()
-        mp.set_property("geometry", options.geometry_restore)
-    end)
-
-    pip_active = false
+    state.pip = false
 end
 
 local function on_ontop_change(_, value)
