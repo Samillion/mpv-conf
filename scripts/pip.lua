@@ -10,7 +10,7 @@
 local options = {
     autofit = "40%x30%",
     autofit_larger = "40%x30%",
-    geometry = "-0-0",            -- bottom-right: -0-0 or 100%:100%
+    geometry = "100%:100%",       -- bottom-right: -0-0 or 100%:100%
     geometry_restore = "50%:50%"  -- center: 50%:50%
 }
 
