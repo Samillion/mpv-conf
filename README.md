@@ -41,7 +41,7 @@
 - Sponsorblock-minimal ([Source](https://codeberg.org/jouni/mpv_sponsorblock_minimal))
 - Thumbfast ([Source](https://github.com/po5/thumbfast)) [[Config](./script-opts/thumbfast.conf)]
   - Windows: If you get an error `cannot create mpv subprocess` this https://github.com/po5/thumbfast/issues/154#issuecomment-3437029385 shows how to fix it, which is basically reverting this commit [po5/thumbfast@9deb073](https://github.com/po5/thumbfast/commit/9deb0733c4e36938cf90e42ddfb7a19a8b2f4641)
-- ytdlAutoFormat ([Source](https://github.com/Samillion/mpv-ytdlautoformat)) [^5]
+- ytdlAutoFormat ([Source](https://github.com/Samillion/mpv-ytdlautoformat)) [[Config](./script-opts/ytdlautoformat.conf)] [^5]
 
 [^1]: `BoxToWide` is a script written and maintained by me.
 [^2]: `ModernZ` is a fork maintained by me.
@@ -59,28 +59,26 @@
 - Mac: `~/.config/mpv/` or `/Users/USERNAME/.config/mpv/`
 
 ```
-config/mpv
-│   input.conf
-|   menu.conf
-│   mpv.conf
-│
-├───fonts
-│       fluent-system-icons.ttf
-|       material-design-icons.ttf
-│
-├───script-opts
-│       modernz.conf
-│       thumbfast.conf
-│
-└───scripts
-        boxtowide.lua
-        image-bindings.lua
-        modernz.lua
-        pause_indicator_lite.lua
-        pip_lite.lua
-        sponsorblock_minimal.lua
-        thumbfast.lua
-        ytdlautoformat.lua
+📁 mpv/
+│   ├── 📄 input.conf
+|   ├── 📄 menu.conf
+│   └── 📄 mpv.conf
+├── 📁 fonts/
+│   ├── 📄 fluent-system-icons.ttf
+│   └── 📄 material-design-icons.ttf
+├── 📁 script-opts/
+│   ├── 📄 modernz.conf
+│   ├── 📄 thumbfast.conf
+│   └── 📄 ytdlautoformat.conf
+└── 📁 scripts/
+    ├── 📄 boxtowide.lua
+    ├── 📄 image-bindings.lua
+    ├── 📄 modernz.lua
+    ├── 📄 pause_indicator_lite.lua
+    ├── 📄 pip_lite.lua
+    ├── 📄 sponsorblock_minimal.lua
+    ├── 📄 thumbfast.lua
+    └── 📄 ytdlautoformat.lua
 ```
 
 > [!NOTE]
