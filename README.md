@@ -33,7 +33,7 @@
 - Context menu [[menu.conf](./menu.conf)]
 
 ## Scripts
-- BoxToWide ([Source](https://github.com/Samillion/mpv-boxtowide)) [^1]
+- BoxToWide ([Source](https://github.com/Samillion/mpv-boxtowide)) [[Config](./script-opts/boxtowide.conf)] [^1]
 - Image-Bindings ([Source](https://github.com/guidocella/mpv-image-config/blob/main/scripts/image-bindings.lua)) [[Modified](./scripts/image-bindings.lua)]
 - ModernZ OSC ([Source](https://github.com/Samillion/ModernZ)) [[Config](./script-opts/modernz.conf)] [^2]
 - Pause Indicator Lite ([Source](https://github.com/Samillion/ModernZ/tree/main/extras/pause-indicator-lite)) [^3]
@@ -67,6 +67,7 @@
 │   ├── 📄 fluent-system-icons.ttf
 │   └── 📄 material-design-icons.ttf
 ├── 📁 script-opts/
+│   ├── 📄 boxtowide.conf
 │   ├── 📄 modernz.conf
 │   ├── 📄 thumbfast.conf
 │   └── 📄 ytdlautoformat.conf
