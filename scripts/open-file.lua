@@ -1,8 +1,16 @@
--- A fork of https://github.com/rossy/mpv-open-file-dialog
--- Open file dialoge on Windows with a keybind
--- Default is ctrl+o
--- Can be assigned in menu.conf as well with:
--- &Open File	script-binding open_file/open-file
+--[[
+
+    A fork of https://github.com/rossy/mpv-open-file-dialog
+
+    Open file dialog on Windows with a keybind
+
+    Default is Ctrl+o
+    input.conf: Ctrl+o script-binding open_file/open-file
+
+    Can be assigned in menu.conf as well with:
+    &Open File	script-binding open_file/open-file
+
+--]]
 
 local utils = require 'mp.utils'
 
@@ -49,4 +57,4 @@ function open_file()
     end
 end
 
-mp.add_key_binding('ctrl+o', 'open-file', open_file)
+mp.add_key_binding('Ctrl+o', 'open-file', open_file)
