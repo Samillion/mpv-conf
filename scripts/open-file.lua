@@ -2,23 +2,18 @@
 
     A fork of https://github.com/rossy/mpv-open-file-dialog
 
-    Open file dialog on Windows with a keybind
+    Open file dialog on Windows with a keybind or context-menu
 
-    Default is Ctrl+o
     input.conf: Ctrl+o script-binding open_file/open
-
-    Can be assigned in menu.conf as well with:
-    &Open File	script-binding open_file/open
+    menu.conf: &Open File	script-binding open_file/open
 
 --]]
 
-local utils = require 'mp.utils'
+local utils = require "mp.utils"
 
 local function open()
     local was_ontop = mp.get_property_native("ontop")
-    if was_ontop then
-        mp.set_property_native("ontop", false)
-    end
+    if was_ontop then mp.set_property_native("ontop", false) end
 
     local res = utils.subprocess({
         args = {
@@ -42,9 +37,7 @@ local function open()
         capture_stderr = true,
     })
 
-    if was_ontop then
-        mp.set_property_native("ontop", true)
-    end
+    if was_ontop then mp.set_property_native("ontop", true) end
 
     if not res or res.status ~= 0 or not res.stdout then
         return
@@ -57,4 +50,4 @@ local function open()
     end
 end
 
-mp.add_key_binding('Ctrl+o', 'open', open)
+mp.add_key_binding(nil, "open", open)
