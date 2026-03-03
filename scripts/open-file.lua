@@ -5,16 +5,16 @@
     Open file dialog on Windows with a keybind
 
     Default is Ctrl+o
-    input.conf: Ctrl+o script-binding open_file/open-file
+    input.conf: Ctrl+o script-binding open_file/open
 
     Can be assigned in menu.conf as well with:
-    &Open File	script-binding open_file/open-file
+    &Open File	script-binding open_file/open
 
 --]]
 
 local utils = require 'mp.utils'
 
-function open_file()
+local function open()
     local was_ontop = mp.get_property_native("ontop")
     if was_ontop then
         mp.set_property_native("ontop", false)
@@ -57,4 +57,4 @@ function open_file()
     end
 end
 
-mp.add_key_binding('Ctrl+o', 'open-file', open_file)
+mp.add_key_binding('Ctrl+o', 'open', open)
