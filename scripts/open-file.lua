@@ -22,7 +22,7 @@ function open_file()
             Add-Type -AssemblyName PresentationFramework
             $ofd = New-Object Microsoft.Win32.OpenFileDialog
             $ofd.Multiselect = $true
-            $ofd.Filter = "Media files|*.mkv;*.mp4;*.mp3;*.flac;*.avi|All files|*.*"
+            $ofd.Filter = "Video files|*.mkv;*.mp4;*.avi;*.mov;*.webm;*.wmv;*.gif|All files|*.*"
 
             if ($ofd.ShowDialog() -eq $true) {
                 $ofd.FileNames -join "`n"
