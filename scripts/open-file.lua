@@ -2,7 +2,7 @@
 -- Open file dialoge on Windows with a keybind
 -- Default is ctrl+o
 -- Can be assigned in menu.conf as well with:
--- &File Explorer	script-binding open_file/open-file
+-- &Open File	script-binding open_file/open-file
 
 local utils = require 'mp.utils'
 
