@@ -24,7 +24,7 @@
   - `taskbar-progress` [[details](https://mpv.io/manual/master/#options-taskbar-progress)]
 
 > [!IMPORTANT]  
-> <ins>**mpv v0.39 or newer is required**</ins> due to reliance on features like `autocreate-playlist`, which replaces `autoload.lua` with native functionality.
+> <ins>**Latest mpv (git/master) is required**</ins>.
 > Please review the files before use to understand their contents.
 
 ## Configuration
@@ -36,18 +36,20 @@
 - BoxToWide ([Source](https://github.com/Samillion/mpv-boxtowide)) [[Config](./script-opts/boxtowide.conf)] [^1]
 - Image-Bindings ([Source](https://github.com/guidocella/mpv-image-config/blob/main/scripts/image-bindings.lua)) [[Modified](./scripts/image-bindings.lua)]
 - ModernZ OSC ([Source](https://github.com/Samillion/ModernZ)) [[Config](./script-opts/modernz.conf)] [^2]
-- Pause Indicator Lite ([Source](https://github.com/Samillion/ModernZ/tree/main/extras/pause-indicator-lite)) [^3]
-- PiP-Lite (Picture-in-Picture) ([Source](https://github.com/Samillion/ModernZ/tree/main/extras/pip-lite)) [^4]
+- Open-File (Open file dialog; Windows only) ([Source](./scripts/open-file.lua)) [^3]
+- Pause Indicator Lite ([Source](https://github.com/Samillion/ModernZ/tree/main/extras/pause-indicator-lite)) [^4]
+- PiP-Lite (Picture-in-Picture) ([Source](https://github.com/Samillion/ModernZ/tree/main/extras/pip-lite)) [^5]
 - Sponsorblock-minimal ([Source](https://codeberg.org/jouni/mpv_sponsorblock_minimal))
 - Thumbfast ([Source](https://github.com/po5/thumbfast)) [[Config](./script-opts/thumbfast.conf)]
   - Windows: If you get an error `cannot create mpv subprocess` this https://github.com/po5/thumbfast/issues/154#issuecomment-3437029385 shows how to fix it, which is basically reverting this commit [po5/thumbfast@9deb073](https://github.com/po5/thumbfast/commit/9deb0733c4e36938cf90e42ddfb7a19a8b2f4641)
-- ytdlAutoFormat ([Source](https://github.com/Samillion/mpv-ytdlautoformat)) [[Config](./script-opts/ytdlautoformat.conf)] [^5]
+- ytdlAutoFormat ([Source](https://github.com/Samillion/mpv-ytdlautoformat)) [[Config](./script-opts/ytdlautoformat.conf)] [^6]
 
 [^1]: `BoxToWide` is a script written and maintained by me.
 [^2]: `ModernZ` is a fork maintained by me.
-[^3]: `Pause Indicator Lite` is a script written and maintained by me.
-[^4]: `PiP-Lite (Picture-in-Picture)` is a script written and maintained by me.
-[^5]: `ytdlAutoFormat` is a script written and maintained by me.
+[^3]: `Open-File` is a fork maintained by me.
+[^4]: `Pause Indicator Lite` is a script written and maintained by me.
+[^5]: `PiP-Lite (Picture-in-Picture)` is a script written and maintained by me.
+[^6]: `ytdlAutoFormat` is a script written and maintained by me.
 
 
 > [!NOTE]
@@ -75,6 +77,7 @@
     ├── 📄 boxtowide.lua
     ├── 📄 image-bindings.lua
     ├── 📄 modernz.lua
+    ├── 📄 open-file.lua
     ├── 📄 pause_indicator_lite.lua
     ├── 📄 pip_lite.lua
     ├── 📄 sponsorblock_minimal.lua
