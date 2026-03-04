@@ -34,7 +34,6 @@
 
 ## Scripts
 - BoxToWide ([Source](https://github.com/Samillion/mpv-boxtowide)) [[Config](./script-opts/boxtowide.conf)] [^1]
-- Image-Bindings ([Source](https://github.com/guidocella/mpv-image-config/blob/main/scripts/image-bindings.lua)) [[Modified](./scripts/image-bindings.lua)]
 - ModernZ OSC ([Source](https://github.com/Samillion/ModernZ)) [[Config](./script-opts/modernz.conf)] [^2]
 - Open-File (Open file dialog; Windows only) ([Source](./scripts/open-file.lua)) [^3]
 - Pause Indicator Lite ([Source](https://github.com/Samillion/ModernZ/tree/main/extras/pause-indicator-lite)) [^4]
@@ -75,7 +74,6 @@
 │   └── 📄 ytdlautoformat.conf
 └── 📁 scripts/
     ├── 📄 boxtowide.lua
-    ├── 📄 image-bindings.lua
     ├── 📄 modernz.lua
     ├── 📄 open-file.lua
     ├── 📄 pause_indicator_lite.lua
