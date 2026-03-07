@@ -14,7 +14,8 @@
 - Hardware decoding enabled
   - Using `gpu-api=d3d11` and `hwdec=d3d11va` (Nvidia GPU, Windows)
   - ~~Using `gpu-api=vulkan` and `hwdec=nvdec` (Nvidia GPU)~~
-    - Slow startup with `Vulkan+Nvidia`: https://github.com/mpv-player/mpv/issues/13019
+    - Slow startup issue: https://github.com/mpv-player/mpv/issues/13019
+    - AV1 Codec issue: https://github.com/mpv-player/mpv/issues/17517
 - Default keybinds are disabled: `input-default-bindings=no`
     - Custom keybinds are set in [input.conf](https://github.com/Samillion/mpv-conf/blob/master/input.conf)
 - Matroska ordered chapters is disabled: `ordered-chapters=no`
