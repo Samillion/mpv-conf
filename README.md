@@ -1,6 +1,6 @@
 ## Overview
 
-![ModernZ-OSC](https://github.com/user-attachments/assets/9c11c28d-25d7-46e5-9044-67d4653b189a)
+<img width="1717" height="967" alt="ModernZ-OSC" src="https://github.com/user-attachments/assets/7573bc13-bdb3-46f6-8baa-fca377280e17" />
 
 <p align="center">
     Configuration files and scripts I use for mpv, tailored to a generally minimal and straightforward use case.
@@ -71,6 +71,7 @@
 ├── 📁 script-opts/
 │   ├── 📄 boxtowide.conf
 │   ├── 📄 modernz.conf
+│   ├── 📄 pause_indicator_lite.conf
 │   ├── 📄 thumbfast.conf
 │   └── 📄 ytdlautoformat.conf
 └── 📁 scripts/
