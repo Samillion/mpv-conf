@@ -66,8 +66,8 @@
 |   ├── 📄 menu.conf
 │   └── 📄 mpv.conf
 ├── 📁 fonts/
-│   ├── 📄 fluent-system-icons.ttf
-│   └── 📄 material-design-icons.ttf
+│   ├── 📄 modernz-icons.ttf
+│   └── 📄 Montserrat-Regular.ttf
 ├── 📁 script-opts/
 │   ├── 📄 boxtowide.conf
 │   ├── 📄 modernz.conf
