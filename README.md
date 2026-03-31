@@ -1,6 +1,6 @@
 ## Overview
 
-<img width="1717" height="967" alt="ModernZ-OSC" src="https://github.com/user-attachments/assets/7573bc13-bdb3-46f6-8baa-fca377280e17" />
+<img width="1715" height="966" alt="ModernZ" src="https://github.com/user-attachments/assets/a2c8081e-2909-4bd1-872d-c59c48e76302" />
 
 <p align="center">
     Configuration files and scripts I use for mpv, tailored to a generally minimal and straightforward use case.
