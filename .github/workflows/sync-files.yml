@@ -5,19 +5,23 @@ on:
     - cron: "0 0 2 * *"
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+concurrency:
+  group: sync-files
+  cancel-in-progress: true
+
 jobs:
   sync_files:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
 
     steps:
       - name: "chore: checkout repository"
-        uses: actions/checkout@v4
-
-      # hold the list of updated files
-      - name: "chore: initialize updated files list"
-        run: echo "" > /tmp/updated_files.txt
+        uses: actions/checkout@v5
 
       - name: "sync: update mpv scripts"
         run: |
@@ -36,7 +40,6 @@ jobs:
 
             if ! cmp -s "$tmp" "$dest"; then
               mv "$tmp" "$dest"
-              echo "$dest" >> /tmp/updated_files.txt
               echo "Updated $dest"
             else
               rm -f "$tmp"
@@ -52,32 +55,17 @@ jobs:
             "https://raw.githubusercontent.com/po5/thumbfast/master/thumbfast.lua" \
             "scripts/thumbfast.lua"
 
-      - name: "chore: debug updated files"
-        run: |
-          echo "Updated files:"
-          sed '/^$/d' /tmp/updated_files.txt || echo "No files were updated"
-
       - name: "chore: commit and push changes"
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "GitHub Actions"
 
-          # remove empty lines
-          sed -i '/^$/d' /tmp/updated_files.txt
-
-          if [ -s /tmp/updated_files.txt ]; then
-            while IFS= read -r file; do
-              if [ -f "$file" ]; then
-                git add "$file"
-              else
-                echo "File $file not found, skipping."
-              fi
-            done < /tmp/updated_files.txt
-
-            git commit -m "sync: update from source repo" && git push || \
-              echo "No changes to commit"
+          if ! git diff --quiet; then
+            git add .
+            git commit -m "sync: update scripts"
+            git push
           else
-            echo "No files were updated"
+            echo "No changes to commit"
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
