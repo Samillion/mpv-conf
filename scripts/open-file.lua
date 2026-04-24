@@ -10,9 +10,9 @@
         Ctrl+Shift+a    script-binding open_file/add_audio
 
     menu.conf:
-        &Open File		script-binding open_file/open
-        &Add Subtitle	script-binding open_file/add_subtitle
-        A&dd Audio		script-binding open_file/add_audio
+        &Open File			script-binding open_file/open
+        &Add Subtitle		script-binding open_file/add_subtitle
+        A&dd Audio Track	script-binding open_file/add_audio
 
 --]]
 
