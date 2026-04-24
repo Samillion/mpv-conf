@@ -7,10 +7,12 @@
     input.conf:
         Ctrl+o          script-binding open_file/open
         Ctrl+Shift+s    script-binding open_file/add_subtitle
+        Ctrl+Shift+a    script-binding open_file/add_audio
 
     menu.conf:
         &Open File		script-binding open_file/open
         &Add Subtitle	script-binding open_file/add_subtitle
+        A&dd Audio		script-binding open_file/add_audio
 
 --]]
 
@@ -75,5 +77,26 @@ local function add_subtitle()
     end
 end
 
+local function add_audio()
+    local stdout = invoke_dialog([[
+        Add-Type -AssemblyName PresentationFramework
+        $ofd = New-Object Microsoft.Win32.OpenFileDialog
+        $ofd.Multiselect = $false
+        $ofd.Filter = "Audio files|*.mp3;*.flac;*.aac;*.ogg;*.wav;*.m4a;*.opus;*.wma;*.mka;*.ac3|All files|*.*"
+
+        if ($ofd.ShowDialog() -eq $true) {
+            $ofd.FileName
+        }
+    ]])
+
+    if not stdout then return end
+
+    local filename = stdout:match("[^\r\n]+")
+    if filename then
+        mp.commandv("audio-add", filename, "select")
+    end
+end
+
 mp.add_key_binding(nil, "open", open)
 mp.add_key_binding(nil, "add_subtitle", add_subtitle)
+mp.add_key_binding(nil, "add_audio", add_audio)
