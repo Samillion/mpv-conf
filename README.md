@@ -37,7 +37,7 @@
 ## Scripts
 - BoxToWide ([Source](https://github.com/Samillion/mpv-boxtowide)) [[Config](./script-opts/boxtowide.conf)] [^1]
 - ModernZ OSC ([Source](https://github.com/Samillion/ModernZ)) [[Config](./script-opts/modernz.conf)] [^2]
-- Open-File (Open file dialog; Windows only) ([Source](./scripts/open-file.lua)) [^3]
+- Open-File (Open file dialog; Windows only) ([Source](https://github.com/Samillion/ModernZ/tree/main/extras/open-file)) [^3]
 - Pause Indicator Lite ([Source](https://github.com/Samillion/ModernZ/tree/main/extras/pause-indicator-lite)) [^4]
 - PiP-Lite (Picture-in-Picture) ([Source](https://github.com/Samillion/ModernZ/tree/main/extras/pip-lite)) [^5]
 - Sponsorblock-minimal ([Source](https://codeberg.org/jouni/mpv_sponsorblock_minimal))
@@ -68,11 +68,13 @@
 │   └── 📄 mpv.conf
 ├── 📁 fonts/
 │   ├── 📄 modernz-icons.ttf
-│   └── 📄 Montserrat-Regular.ttf
+│   ├── 📄 Montserrat-Regular.ttf
+│   └── 📄 Roboto-Regular.ttf
 ├── 📁 script-opts/
 │   ├── 📄 boxtowide.conf
 │   ├── 📄 modernz.conf
 │   ├── 📄 pause_indicator_lite.conf
+│   ├── 📄 pip_lite.conf
 │   ├── 📄 thumbfast.conf
 │   └── 📄 ytdlautoformat.conf
 └── 📁 scripts/
